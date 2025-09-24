@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import OTPPage from "./pages/OTPPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import DashboardLayout from "./pages/DashboardLayout.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 import RegistrationsPortal from "./pages/RegistrationsPortal.jsx";
 import PassengersPortal from "./pages/PassengersPortal.jsx";
 import TripAssignPortal from "./pages/TripAssignPortal.jsx";
@@ -22,6 +23,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/otp" element={<OTPPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<RegistrationsPortal />} />
               <Route path="registration" element={<RegistrationsPortal />} />
