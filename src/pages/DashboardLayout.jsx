@@ -28,38 +28,55 @@ const DashboardLayout = () => {
       {/* Main Content */}
       <div className="pt-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          {/* Navigation Tabs - Centered */}
+          {/* Enhanced Navigation Tabs - Centered with Purple Border */}
           <div className="flex justify-center mb-8 sm:mb-12">
-            <div className="flex space-x-1 bg-card/50 backdrop-blur-sm rounded-2xl p-2 border border-border/30 shadow-lg">
+            <div className="relative flex space-x-1 bg-card/70 backdrop-blur-md rounded-2xl p-3 border-2 border-purple-500/30 hover:border-purple-500/50 transition-all duration-500 shadow-sm hover:shadow-purple-500/10">
+              {/* Purple gradient background glow */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-purple-600/10 to-purple-500/5 rounded-2xl blur-xl opacity-50"></div>
+              
               <button
                 onClick={() => handleTabChange('registration')}
-                className={`px-6 sm:px-8 py-3 rounded-xl font-semibold transition-all duration-300 text-sm sm:text-base min-w-[120px] ${
+                className={`relative z-10 px-6 sm:px-8 py-3.5 rounded-xl font-semibold transition-all duration-300 text-sm sm:text-base min-w-[130px] group ${
                   activeTab === 'registration'
-                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg transform scale-105'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-sm shadow-purple-500/25 transform scale-105 border border-purple-400/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-purple-50/50 dark:hover:bg-purple-950/30 hover:border-purple-300/30 border border-transparent hover:scale-102 hover:shadow-sm'
                 }`}
+                data-testid="registration-tab-button"
               >
-                Registrations
+                <span className="relative z-10">Registrations</span>
+                {activeTab === 'registration' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-purple-600/20 rounded-xl blur-sm"></div>
+                )}
               </button>
+              
               <button
                 onClick={() => handleTabChange('passengers')}
-                className={`px-6 sm:px-8 py-3 rounded-xl font-semibold transition-all duration-300 text-sm sm:text-base min-w-[120px] ${
+                className={`relative z-10 px-6 sm:px-8 py-3.5 rounded-xl font-semibold transition-all duration-300 text-sm sm:text-base min-w-[130px] group ${
                   activeTab === 'passengers'
-                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg transform scale-105'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-sm shadow-purple-500/25 transform scale-105 border border-purple-400/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-purple-50/50 dark:hover:bg-purple-950/30 hover:border-purple-300/30 border border-transparent hover:scale-102 hover:shadow-sm'
                 }`}
+                data-testid="passengers-tab-button"
               >
-                Passengers
+                <span className="relative z-10">Passengers</span>
+                {activeTab === 'passengers' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-purple-600/20 rounded-xl blur-sm"></div>
+                )}
               </button>
+              
               <button
                 onClick={() => handleTabChange('trip-assign')}
-                className={`px-6 sm:px-8 py-3 rounded-xl font-semibold transition-all duration-300 text-sm sm:text-base min-w-[120px] ${
+                className={`relative z-10 px-6 sm:px-8 py-3.5 rounded-xl font-semibold transition-all duration-300 text-sm sm:text-base min-w-[130px] group ${
                   activeTab === 'trip-assign'
-                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg transform scale-105'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-sm shadow-purple-500/25 transform scale-105 border border-purple-400/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-purple-50/50 dark:hover:bg-purple-950/30 hover:border-purple-300/30 border border-transparent hover:scale-102 hover:shadow-sm'
                 }`}
+                data-testid="trip-assign-tab-button"
               >
-                Trip-Assign
+                <span className="relative z-10">Trip-Assign</span>
+                {activeTab === 'trip-assign' && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-purple-600/20 rounded-xl blur-sm"></div>
+                )}
               </button>
             </div>
           </div>
