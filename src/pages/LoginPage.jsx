@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button.jsx';
 import { Input } from '../components/ui/input.jsx';
 import { Label } from '../components/ui/label.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
-import { Bus, Eye, EyeOff, Lock, User, ArrowLeft } from 'lucide-react';
+import { Bus, Eye, EyeOff, Lock, User, ArrowLeft, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import { setToken } from '../lib/token.js';
 import axios from 'axios';
@@ -475,7 +475,13 @@ const LoginPage = () => {
   }, [showForgotPasswordOtpForm]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-4 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-foreground flex items-center justify-center px-4 transition-colors duration-300 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5"></div>
+      <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
+      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-purple-400/5 rounded-full blur-2xl"></div>
+      
       <Toaster 
         toastOptions={{
           style: {
@@ -487,11 +493,11 @@ const LoginPage = () => {
       />
       
       {/* Back to Home Button */}
-      <div className="absolute top-6 left-6">
+      <div className="absolute top-6 left-6 z-10">
         <Link to="/">
           <Button
             variant="outline"
-            className="border-border/50 hover:border-purple-500/50 hover:bg-purple-500/10 transition-all duration-300"
+            className="border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all duration-300 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg font-medium"
           >
             <ArrowLeft className="mr-2 w-4 h-4" />
             Back to Home
@@ -500,56 +506,82 @@ const LoginPage = () => {
       </div>
 
       {/* Brand Logo in Top Right */}
-      <div className="absolute top-6 right-6">
+      <div className="absolute top-6 right-6 z-10">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-              <Bus className="w-4 h-4 text-white" />
+          <div className="flex items-center space-x-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-2xl border-2 border-purple-200 dark:border-purple-700 shadow-lg">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-md">
+              <Bus className="w-6 h-6 text-white" />
             </div>
-            <span className="text-lg font-bold">EmcomServ</span>
+            <span className="text-xl font-bold text-gray-800 dark:text-gray-100">EmcomServ</span>
           </div>
-          <ThemeToggle />
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-2 rounded-xl border-2 border-purple-200 dark:border-purple-700 shadow-lg">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
-      {/* Form Section with Enhanced Visual Appeal - Made Wider */}
-      <div className="w-full max-w-md flex items-center justify-center">
+      {/* Form Section with Enhanced Visual Appeal */}
+      <div className="w-full max-w-lg flex items-center justify-center relative z-10">
         <div className="relative w-full">
-          {/* Decorative Background Glow */}
-          <div className="absolute -inset-2 bg-gradient-to-r from-purple-500/10 via-purple-600/20 to-purple-500/10 rounded-3xl blur-xl"></div>
+          {/* Enhanced Decorative Background Glow */}
+          <div className="absolute -inset-6 bg-gradient-to-r from-purple-500/10 via-purple-600/20 to-purple-500/10 rounded-3xl blur-2xl"></div>
+          <div className="absolute -inset-3 bg-gradient-to-r from-blue-500/5 via-purple-600/10 to-pink-500/5 rounded-3xl blur-xl"></div>
           
-          <Card className="relative bg-card/95 backdrop-blur-sm border-2 border-purple-500/20 shadow-2xl w-full 
-                         hover:border-purple-500/30 transition-all duration-500 
-                         before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-purple-500/5 before:to-transparent before:pointer-events-none
-                         transform hover:scale-[1.02]">
-            <CardHeader className="text-center pb-8 pt-8 relative z-10">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl">
-                  <Bus className="w-8 h-8 text-white" />
+          <Card className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/70 dark:border-purple-700/70 shadow-2xl w-full 
+                         hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-700 
+                         before:absolute before:inset-0 before:rounded-3xl before:bg-gradient-to-br before:from-purple-500/5 before:to-blue-500/5 before:pointer-events-none
+                         transform hover:scale-[1.02] rounded-3xl">
+            <CardHeader className="text-center pb-8 pt-10 relative z-10">
+              <div className="flex justify-center mb-8">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 rounded-3xl flex items-center justify-center shadow-2xl shadow-purple-500/25 rotate-3 hover:rotate-6 transition-transform duration-500">
+                    <Bus className="w-10 h-10 text-white" />
+                  </div>
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  </div>
                 </div>
               </div>
-              <CardTitle className="text-3xl font-bold mb-3">
-                <span className="bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">
-                  {showForgotPasswordOtpForm ? 'Verify OTP' : showForgotPasswordForm ? 'Reset Password' : showOtpForm ? 'Enter OTP' : 'Login Portal'}
+              
+              <CardTitle className="text-3xl sm:text-4xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
+                  {showForgotPasswordOtpForm ? 'Verify Reset OTP' : showForgotPasswordForm ? 'Reset Password' : showOtpForm ? 'Enter Verification Code' : 'Login Portal'}
                 </span>
               </CardTitle>
-              <p className="text-muted-foreground text-base leading-relaxed">
+              
+              <p className="text-gray-600 dark:text-gray-300 text-base leading-relaxed max-w-md mx-auto">
                 {showForgotPasswordOtpForm
-                  ? 'Enter the 6-digit OTP sent to your phone'
+                  ? 'Enter the 6-digit verification code sent to your registered phone number'
                   : showForgotPasswordForm
-                  ? 'Enter your username and new password'
+                  ? 'Enter your username to receive a password reset code'
                   : showOtpForm
-                  ? 'Enter the 6-digit OTP sent to your phone'
+                  ? 'Please enter the 6-digit code we sent to your phone for secure access'
                   : 'Access your dashboard with secure authentication'}
               </p>
+
+              {!showForgotPasswordOtpForm && !showForgotPasswordForm && !showOtpForm && (
+                <div className="flex items-center justify-center gap-6 mt-6">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <Shield className="w-4 h-4 text-purple-500" />
+                    <span>Bank-level Security</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span>SSL Encrypted</span>
+                  </div>
+                </div>
+              )}
             </CardHeader>
 
-            <CardContent className="space-y-6 px-8 pb-8 relative z-10">
+            <CardContent className="space-y-8 px-10 pb-10 relative z-10">
               {showForgotPasswordOtpForm ? (
-                <form onSubmit={handleForgotPasswordSubmit} className="space-y-6">
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-8">
                   {/* OTP Input Fields */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium text-foreground">Enter OTP</Label>
+                  <div className="space-y-4">
+                    <Label className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      Enter Verification Code
+                    </Label>
                     <div className="flex space-x-3 justify-center">
                       {forgotPasswordOtp.map((digit, index) => (
                         <Input
@@ -562,8 +594,8 @@ const LoginPage = () => {
                           ref={(el) => {
                             forgotPasswordOtpInputs.current[index] = el;
                           }}
-                          className={`w-14 h-14 text-center text-xl font-bold bg-background/50 border-border/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 rounded-xl ${
-                            digit ? 'border-2 border-purple-500 bg-purple-500/5 shadow-lg' : ''
+                          className={`w-16 h-16 text-center text-2xl font-bold bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg ${
+                            digit ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 shadow-xl scale-105' : 'hover:border-purple-300 dark:hover:border-purple-600'
                           }`}
                           autoComplete="off"
                         />
@@ -572,12 +604,12 @@ const LoginPage = () => {
                   </div>
 
                   {/* New Password Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password" className="text-base font-medium text-foreground">
+                  <div className="space-y-3">
+                    <Label htmlFor="new-password" className="text-lg font-semibold text-gray-700 dark:text-gray-200">
                       New Password
                     </Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Lock className="absolute left-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
                       <Input
                         id="new-password"
                         name="newPassword"
@@ -585,16 +617,16 @@ const LoginPage = () => {
                         required
                         value={forgotPasswordData.newPassword}
                         onChange={handleForgotPasswordInputChange}
-                        className="pl-12 pr-12 h-14 text-base bg-background/50 border-border/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 rounded-xl"
-                        placeholder="Enter new password"
+                        className="pl-16 pr-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
+                        placeholder="Enter your new secure password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-purple-500 transition-colors"
+                        className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-500 transition-colors p-1"
                         aria-label={showPassword ? 'Hide password' : 'Show password'}
                       >
-                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showPassword ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                       </button>
                     </div>
                   </div>
@@ -603,15 +635,18 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-14 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-purple-500/25"
+                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
                   >
                     {isLoading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Resetting Password...</span>
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Updating Password...</span>
                       </div>
                     ) : (
-                      'Reset Password'
+                      <span className="flex items-center justify-center gap-3">
+                        <Shield className="w-6 h-6" />
+                        Reset Password
+                      </span>
                     )}
                   </Button>
 
@@ -621,9 +656,10 @@ const LoginPage = () => {
                       type="button"
                       onClick={handleResendForgotPasswordOtp}
                       disabled={isLoading}
-                      className="text-purple-500 hover:text-purple-600 transition-colors disabled:opacity-50 font-medium"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors disabled:opacity-50 font-semibold flex items-center gap-2"
                     >
-                      Resend OTP
+                      <RefreshCw className="w-4 h-4" />
+                      Resend Code
                     </button>
                     <button
                       type="button"
@@ -631,21 +667,21 @@ const LoginPage = () => {
                         setShowForgotPasswordOtpForm(false);
                         setShowForgotPasswordForm(false);
                       }}
-                      className="text-purple-500 hover:text-purple-600 transition-colors font-medium"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors font-semibold"
                     >
-                      Back to Login
+                      ← Back to Login
                     </button>
                   </div>
                 </form>
               ) : showForgotPasswordForm ? (
-                <form onSubmit={handleForgotPasswordRequestOtp} className="space-y-6">
+                <form onSubmit={handleForgotPasswordRequestOtp} className="space-y-8">
                   {/* Username Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="forgot-username" className="text-base font-medium text-foreground">
-                      Username
+                  <div className="space-y-3">
+                    <Label htmlFor="forgot-username" className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                      Username or Email
                     </Label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <User className="absolute left-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
                       <Input
                         id="forgot-username"
                         name="username"
@@ -653,8 +689,8 @@ const LoginPage = () => {
                         required
                         value={forgotPasswordData.username}
                         onChange={handleForgotPasswordInputChange}
-                        className="pl-12 h-14 text-base bg-background/50 border-border/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 rounded-xl"
-                        placeholder="Enter your username"
+                        className="pl-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
+                        placeholder="Enter your username or email"
                       />
                     </div>
                   </div>
@@ -663,15 +699,15 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-14 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-purple-500/25"
+                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
                   >
                     {isLoading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Sending OTP...</span>
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Sending Reset Code...</span>
                       </div>
                     ) : (
-                      'Send Reset OTP'
+                      'Send Reset Code'
                     )}
                   </Button>
 
@@ -680,17 +716,20 @@ const LoginPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowForgotPasswordForm(false)}
-                      className="text-purple-500 hover:text-purple-600 transition-colors font-medium"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors font-semibold"
                     >
                       ← Back to Login
                     </button>
                   </div>
                 </form>
               ) : showOtpForm ? (
-                <form onSubmit={handleOtpSubmit} className="space-y-6">
+                <form onSubmit={handleOtpSubmit} className="space-y-8">
                   {/* OTP Input Fields */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-medium text-foreground">Enter OTP Code</Label>
+                  <div className="space-y-4">
+                    <Label className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      Verification Code
+                    </Label>
                     <div className="flex space-x-3 justify-center">
                       {otp.map((digit, index) => (
                         <Input
@@ -703,8 +742,8 @@ const LoginPage = () => {
                           ref={(el) => {
                             otpInputs.current[index] = el;
                           }}
-                          className={`w-14 h-14 text-center text-xl font-bold bg-background/50 border-border/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 rounded-xl ${
-                            digit ? 'border-2 border-purple-500 bg-purple-500/5 shadow-lg' : ''
+                          className={`w-16 h-16 text-center text-2xl font-bold bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg ${
+                            digit ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 shadow-xl scale-105' : 'hover:border-purple-300 dark:hover:border-purple-600'
                           }`}
                           autoComplete="off"
                         />
@@ -716,38 +755,41 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-14 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-purple-500/25"
+                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
                   >
                     {isLoading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span>Verifying OTP...</span>
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span>Verifying Code...</span>
                       </div>
                     ) : (
-                      'Verify & Login'
+                      <span className="flex items-center justify-center gap-3">
+                        <CheckCircle className="w-6 h-6" />
+                        Verify & Access
+                      </span>
                     )}
                   </Button>
 
                   {/* Resend OTP */}
-                  <div className="text-center text-muted-foreground">
-                    Didn't receive the code?{' '}
+                  <div className="text-center">
+                    <p className="text-gray-600 dark:text-gray-400 mb-2">Didn't receive the code?</p>
                     <button
                       type="button"
                       onClick={handleResendOtp}
                       disabled={isLoading}
-                      className="text-purple-500 hover:text-purple-600 transition-colors disabled:opacity-50 font-medium"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors disabled:opacity-50 font-semibold"
                     >
-                      Resend OTP
+                      Resend Verification Code
                     </button>
                   </div>
                 </form>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-8">
                   {/* Username Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="username" className="text-base font-medium">Username</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="username" className="text-lg font-semibold text-gray-700 dark:text-gray-200">Username</Label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <User className="absolute left-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                       <Input
                         id="username"
                         name="username"
@@ -755,17 +797,17 @@ const LoginPage = () => {
                         required
                         value={formData.username}
                         onChange={handleInputChange}
-                        className="pl-12 h-14 text-base bg-background/50 border-border/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 rounded-xl"
+                        className="pl-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
                         placeholder="Enter your username"
                       />
                     </div>
                   </div>
 
                   {/* Password Field */}
-                  <div className="space-y-2">
-                    <Label htmlFor="password" className="text-base font-medium">Password</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="password" className="text-lg font-semibold text-gray-700 dark:text-gray-200">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <Lock className="absolute left-5 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
                       <Input
                         id="password"
                         name="password"
@@ -773,15 +815,15 @@ const LoginPage = () => {
                         required
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="pl-12 pr-12 h-14 text-base bg-background/50 border-border/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all duration-300 rounded-xl"
+                        className="pl-16 pr-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
                         placeholder="Enter your password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-purple-500 transition-colors"
+                        className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-purple-500 transition-colors p-1"
                       >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        {showPassword ? <EyeOff className="h-6 w-6" /> : <Eye className="h-6 w-6" />}
                       </button>
                     </div>
                   </div>
@@ -791,7 +833,7 @@ const LoginPage = () => {
                     <button
                       type="button"
                       onClick={handleForgotPasswordClick}
-                      className="text-purple-500 hover:text-purple-600 transition-colors font-medium"
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors font-semibold"
                     >
                       Forgot password?
                     </button>
@@ -801,16 +843,19 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-14 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] shadow-lg hover:shadow-purple-500/25"
+                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
                     data-testid="login-submit-button"
                   >
                     {isLoading ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <div className="flex items-center justify-center space-x-3">
+                        <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span>Signing in...</span>
                       </div>
                     ) : (
-                      'Access Dashboard'
+                      <span className="flex items-center justify-center gap-3">
+                        <Shield className="w-6 h-6" />
+                        Access Dashboard
+                      </span>
                     )}
                   </Button>
                 </form>

@@ -1,128 +1,184 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   UserCheck, 
   Bus, 
   MapPin, 
-  Shield
+  Shield,
+  LogOut
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card.jsx';
+import { Button } from '../components/ui/button.jsx';
+
+// Authentication Error Component
+const AuthenticationError = ({ onRetryLogin }) => (
+  <div className="flex flex-col items-center justify-center py-16 px-4">
+    <div className="bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-2xl p-8 max-w-md text-center shadow-xl">
+      <LogOut className="h-16 w-16 text-red-500 mx-auto mb-4" />
+      <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
+        Authentication Required
+      </h3>
+      <p className="text-red-600 dark:text-red-300 mb-6">
+        You need to login again to access registration portal. Your session may have expired.
+      </p>
+      <Button 
+        onClick={onRetryLogin}
+        className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg"
+      >
+        Login Again
+      </Button>
+    </div>
+  </div>
+);
 
 const RegistrationsPortal = () => {
+  const navigate = useNavigate();
+  
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem('operatortoken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
+
+  const handleRetryLogin = () => {
+    localStorage.removeItem('operatortoken');
+    navigate('/login');
+  };
+
+  // Check if user is authenticated
+  const isAuthenticated = localStorage.getItem('operatortoken');
+  
+  if (!isAuthenticated) {
+    return <AuthenticationError onRetryLogin={handleRetryLogin} />;
+  }
+
   const registrationTypes = [
     {
       id: 'driver',
       title: 'Driver Registration',
-      icon: <User className="h-8 w-8" />,
-      color: 'from-red-500 to-red-600',
-      hoverColor: 'from-red-400 to-red-500',
+      icon: <User className="h-12 w-12" />,
+      gradientFrom: 'from-emerald-500',
+      gradientTo: 'to-emerald-600',
+      hoverFrom: 'from-emerald-400',
+      hoverTo: 'to-emerald-500',
       description: 'Register new bus drivers with licenses and certifications'
     },
     {
       id: 'attender',
       title: 'Attender Registration',
-      icon: <UserCheck className="h-8 w-8" />,
-      color: 'from-blue-500 to-blue-600',
-      hoverColor: 'from-blue-400 to-blue-500',
+      icon: <UserCheck className="h-12 w-12" />,
+      gradientFrom: 'from-blue-500',
+      gradientTo: 'to-blue-600',
+      hoverFrom: 'from-blue-400',
+      hoverTo: 'to-blue-500',
       description: 'Register bus attendants and support staff'
     },
     {
       id: 'bus',
       title: 'Bus Registration',
-      icon: <Bus className="h-8 w-8" />,
-      color: 'from-cyan-500 to-cyan-600',
-      hoverColor: 'from-cyan-400 to-cyan-500',
+      icon: <Bus className="h-12 w-12" />,
+      gradientFrom: 'from-orange-500',
+      gradientTo: 'to-orange-600',
+      hoverFrom: 'from-orange-400',
+      hoverTo: 'to-orange-500',
       description: 'Add new buses to the fleet with specifications'
     },
     {
       id: 'route',
       title: 'Route Registration',
-      icon: <MapPin className="h-8 w-8" />,
-      color: 'from-orange-500 to-orange-600',
-      hoverColor: 'from-orange-400 to-orange-500',
+      icon: <MapPin className="h-12 w-12" />,
+      gradientFrom: 'from-cyan-500',
+      gradientTo: 'to-cyan-600',
+      hoverFrom: 'from-cyan-400',
+      hoverTo: 'to-cyan-500',
       description: 'Create new bus routes and schedules'
     },
     {
       id: 'admin',
       title: 'Admin Registration',
-      icon: <Shield className="h-8 w-8" />,
-      color: 'from-green-500 to-green-600',
-      hoverColor: 'from-green-400 to-green-500',
+      icon: <Shield className="h-12 w-12" />,
+      gradientFrom: 'from-purple-500',
+      gradientTo: 'to-purple-600',
+      hoverFrom: 'from-purple-400',
+      hoverTo: 'to-purple-500',
       description: 'Register system administrators and managers'
     }
   ];
 
   const handleRegistrationClick = (type) => {
-    alert(`Opening ${type} registration form...`);
+    // Show a notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-500 border border-purple-400/20';
+    notification.innerHTML = `
+      <div class="font-semibold">Opening ${type.title}</div>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 3000);
   };
 
   return (
     <div className="animate-in fade-in-up duration-700">
-      {/* Header */}
-      <div className="text-center mb-8 sm:mb-12">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
-          <span className="bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-            Registration Portal
-          </span>
-        </h1>
-        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Choose the type of registration you want to perform and manage your fleet efficiently
-        </p>
-      </div>
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
+              Registration Portal
+            </span>
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Choose the type of registration you want to perform and manage your fleet efficiently
+          </p>
+        </div>
 
-      {/* Enhanced Registration Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto">
-        {registrationTypes.map((type, index) => (
-          <Card 
-            key={type.id}
-            className="group relative bg-card/70 backdrop-blur-sm hover:bg-card/90 transition-all duration-500 transform hover:scale-105 border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 cursor-pointer shadow-sm hover:shadow-md hover:shadow-purple-500/10 animate-in fade-in-up overflow-hidden"
-            style={{ animationDelay: `${index * 100}ms` }}
-            onClick={() => handleRegistrationClick(type.title)}
-            data-testid={`${type.id}-registration-card`}
-          >
-            {/* Subtle background glow on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            
-            {/* Top accent border */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400/50 via-purple-500/70 to-purple-600/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            
-            <CardContent className="relative z-10 p-6 sm:p-8 text-center">
-              <div className={`w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r ${type.color} group-hover:bg-gradient-to-r group-hover:${type.hoverColor} rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6 text-white shadow-sm group-hover:shadow-md group-hover:shadow-purple-500/20 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-white/20`}>
-                <div className="transition-transform duration-500 group-hover:scale-110">
-                  {type.icon}
+        {/* Registration Type Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {registrationTypes.map((type, index) => (
+            <Card 
+              key={type.id}
+              className="group relative bg-white dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 cursor-pointer shadow-lg hover:shadow-xl hover:shadow-purple-500/20 dark:hover:shadow-purple-500/10 rounded-2xl overflow-hidden animate-in fade-in-up"
+              style={{ animationDelay: `${index * 150}ms` }}
+              onClick={() => handleRegistrationClick(type)}
+              data-testid={`${type.id}-registration-card`}
+            >
+              {/* Top gradient accent */}
+              <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${type.gradientFrom} ${type.gradientTo} opacity-70 group-hover:opacity-100 transition-opacity duration-500`}></div>
+              
+              <CardContent className="relative z-10 p-8 text-center">
+                {/* Icon Container */}
+                <div className={`w-24 h-24 bg-gradient-to-r ${type.gradientFrom} ${type.gradientTo} group-hover:bg-gradient-to-r group-hover:${type.hoverFrom} group-hover:${type.hoverTo} rounded-2xl flex items-center justify-center mx-auto mb-6 text-white shadow-lg group-hover:shadow-xl group-hover:shadow-purple-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 border border-white/20`}>
+                  <div className="transition-transform duration-500 group-hover:scale-110">
+                    {type.icon}
+                  </div>
                 </div>
-              </div>
-              
-              <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300">
-                {type.title}
-              </h3>
-              
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed group-hover:text-muted-foreground/90 transition-colors duration-300">
-                {type.description}
-              </p>
-              
-              {/* Subtle bottom accent */}
-              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 group-hover:w-20 h-0.5 bg-gradient-to-r from-transparent via-purple-500 to-transparent transition-all duration-500"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Enhanced Stats Section */}
-      <div className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 max-w-4xl mx-auto animate-in fade-in-up duration-700" style={{ animationDelay: '600ms' }}>
-        <div className="group text-center p-6 sm:p-8 bg-card/50 backdrop-blur-sm rounded-2xl border-2 border-purple-200/20 hover:border-purple-400/40 dark:border-purple-800/20 dark:hover:border-purple-600/40 hover:bg-card/70 transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-purple-500/10 hover:scale-105" data-testid="total-registrations-stat">
-          <div className="text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2 transition-colors duration-300 group-hover:text-purple-500 dark:group-hover:text-purple-300">1,247</div>
-          <div className="text-sm sm:text-base text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">Total Registrations</div>
-        </div>
-        
-        <div className="group text-center p-6 sm:p-8 bg-card/50 backdrop-blur-sm rounded-2xl border-2 border-purple-200/20 hover:border-purple-400/40 dark:border-purple-800/20 dark:hover:border-purple-600/40 hover:bg-card/70 transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-purple-500/10 hover:scale-105" data-testid="active-routes-stat">
-          <div className="text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2 transition-colors duration-300 group-hover:text-purple-500 dark:group-hover:text-purple-300">89</div>
-          <div className="text-sm sm:text-base text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">Active Routes</div>
-        </div>
-        
-        <div className="group text-center p-6 sm:p-8 bg-card/50 backdrop-blur-sm rounded-2xl border-2 border-purple-200/20 hover:border-purple-400/40 dark:border-purple-800/20 dark:hover:border-purple-600/40 hover:bg-card/70 transition-all duration-300 shadow-sm hover:shadow-md hover:shadow-purple-500/10 hover:scale-105" data-testid="fleet-vehicles-stat">
-          <div className="text-3xl sm:text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2 transition-colors duration-300 group-hover:text-purple-500 dark:group-hover:text-purple-300">156</div>
-          <div className="text-sm sm:text-base text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">Fleet Vehicles</div>
+                
+                {/* Title */}
+                <h3 className="text-xl sm:text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors duration-500">
+                  {type.title}
+                </h3>
+                
+                {/* Description */}
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 leading-relaxed group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors duration-500">
+                  {type.description}
+                </p>
+                
+                {/* Bottom accent line */}
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 group-hover:w-32 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent transition-all duration-500 rounded-t-full"></div>
+                
+                {/* Corner decoration */}
+                <div className="absolute top-4 right-4 w-8 h-8 border-2 border-purple-200/50 dark:border-purple-700/50 rounded-full group-hover:border-purple-400/70 dark:group-hover:border-purple-500/70 group-hover:scale-125 transition-all duration-500"></div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     </div>

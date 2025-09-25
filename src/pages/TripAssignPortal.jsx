@@ -26,7 +26,7 @@ import { Badge } from '../components/ui/badge.jsx';
 // Authentication Error Component
 const AuthenticationError = ({ onRetryLogin }) => (
   <div className="flex flex-col items-center justify-center py-16 px-4">
-    <div className="bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-2xl p-8 max-w-md text-center">
+    <div className="bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-2xl p-8 max-w-md text-center shadow-xl">
       <LogOut className="h-16 w-16 text-red-500 mx-auto mb-4" />
       <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
         Authentication Required
@@ -36,7 +36,7 @@ const AuthenticationError = ({ onRetryLogin }) => (
       </p>
       <Button 
         onClick={onRetryLogin}
-        className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-sm"
+        className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg"
       >
         Login Again
       </Button>
@@ -47,9 +47,9 @@ const AuthenticationError = ({ onRetryLogin }) => (
 // Success Message Component
 const SuccessMessage = ({ message, onClose }) => (
   <div className="fixed top-4 right-4 z-50">
-    <div className="bg-green-500/90 dark:bg-green-600/90 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 animate-in slide-in-from-right duration-300">
+    <div className="bg-green-500/90 dark:bg-green-600/90 text-white px-6 py-3 rounded-lg shadow-xl flex items-center space-x-2 animate-in slide-in-from-right duration-300 border border-green-400/20">
       <CheckCircle className="w-5 h-5" />
-      <span>{message}</span>
+      <span className="font-medium">{message}</span>
       <button onClick={onClose} className="ml-2 text-white/80 hover:text-white">
         ×
       </button>
@@ -62,36 +62,36 @@ const SkeletonRow = () => (
   <tr className="border-b border-purple-500/20 animate-pulse">
     <td className="p-4">
       <div className="space-y-2">
-        <div className="h-4 bg-muted-foreground/20 rounded w-32"></div>
-        <div className="h-3 bg-muted-foreground/20 rounded w-24"></div>
+        <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-32"></div>
+        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-24"></div>
       </div>
     </td>
     <td className="p-4">
-      <div className="h-4 bg-muted-foreground/20 rounded w-24"></div>
+      <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-24"></div>
     </td>
     <td className="p-4">
-      <div className="h-4 bg-muted-foreground/20 rounded w-28"></div>
+      <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-28"></div>
     </td>
     <td className="p-4">
-      <div className="h-4 bg-muted-foreground/20 rounded w-32"></div>
+      <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-32"></div>
     </td>
     <td className="p-4">
-      <div className="h-6 bg-muted-foreground/20 rounded-full w-16"></div>
+      <div className="h-6 bg-purple-200/30 dark:bg-purple-800/30 rounded-full w-16"></div>
     </td>
     <td className="p-4">
       <div className="space-y-1">
-        <div className="h-3 bg-muted-foreground/20 rounded w-20"></div>
-        <div className="h-3 bg-muted-foreground/20 rounded w-16"></div>
+        <div className="h-3 bg-purple-200/30 dark:bg-purple-800/30 rounded w-20"></div>
+        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-16"></div>
       </div>
     </td>
     <td className="p-4">
       <div className="space-y-2">
-        <div className="h-4 bg-muted-foreground/20 rounded w-24"></div>
-        <div className="h-3 bg-muted-foreground/20 rounded w-20"></div>
+        <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-24"></div>
+        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-20"></div>
       </div>
     </td>
     <td className="p-4">
-      <div className="h-8 bg-muted-foreground/20 rounded w-8"></div>
+      <div className="h-8 bg-purple-200/30 dark:bg-purple-800/30 rounded w-8"></div>
     </td>
   </tr>
 );
@@ -141,15 +141,17 @@ const TripAssignPortal = () => {
     const token = localStorage.getItem('operatortoken');
     if (!token) {
       setAuthError(true);
+      navigate('/login');
       return null;
     }
     return token;
-  }, []);
+  }, [navigate]);
 
   const handleAuthError = useCallback(() => {
     localStorage.removeItem('operatortoken');
     setAuthError(true);
-  }, []);
+    navigate('/login');
+  }, [navigate]);
 
   const handleRetryLogin = useCallback(() => {
     localStorage.removeItem('operatortoken');
@@ -159,11 +161,25 @@ const TripAssignPortal = () => {
   // Show success message
   const showSuccess = (message) => {
     setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(''), 3000);
+    setTimeout(() => setSuccessMessage(''), 4000);
   };
+
+  // Check authentication on mount
+  useEffect(() => {
+    const token = localStorage.getItem('operatortoken');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+  }, [navigate]);
 
   // Fetch all dropdown data
   const fetchDropdownData = useCallback(async () => {
+    if (!API_BASE_URL) {
+      setError('API configuration is missing');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
@@ -215,6 +231,11 @@ const TripAssignPortal = () => {
 
   // Fetch assignments
   const fetchAssignments = useCallback(async () => {
+    if (!API_BASE_URL) {
+      setError('API configuration is missing');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     
@@ -239,72 +260,12 @@ const TripAssignPortal = () => {
       }
 
       const data = await response.json();
-
-      // Format assignments with additional data
-      const formattedAssignments = await Promise.all(
-        data.map(async (assignment) => {
-          const token = getToken();
-          if (!token) return assignment;
-
-          try {
-            // Fetch additional data for each assignment
-            const [busRes, attenderRes, driverRes] = await Promise.all([
-              fetch(`${API_BASE_URL}/api/buses/${assignment.busId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-              }),
-              fetch(`${API_BASE_URL}/api/attenders/${assignment.attenderId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-              }),
-              fetch(`${API_BASE_URL}/api/drivers/${assignment.driverId}`, {
-                headers: { 'Authorization': `Bearer ${token}` },
-              }),
-            ]);
-
-            const [busData, attenderData, driverData] = await Promise.all([
-              busRes.ok ? busRes.json() : {},
-              attenderRes.ok ? attenderRes.json() : {},
-              driverRes.ok ? driverRes.json() : {},
-            ]);
-
-            return {
-              id: assignment.id,
-              driverId: assignment.driverId,
-              busId: assignment.busId,
-              routeId: assignment.routeId,
-              attenderId: assignment.attenderId,
-              driverName: assignment.driverName || driverData.userName || 'Unknown Driver',
-              busNumber: assignment.busNumber || busData.busNumber || 'Unknown Bus',
-              busModel: assignment.busModel || busData.busModel || 'Unknown Model',
-              routeName: assignment.routeName || 'Unknown Route',
-              status: assignment.status || 'Unassigned',
-              driverNumber: assignment.driverNumber || driverData.contactNumber || 'N/A',
-              bookingDate: assignment.bookingDate || 'N/A',
-              time: assignment.time || '00:00:00',
-              attenderName: assignment.attenderName || attenderData.username || 'No Attender',
-              attenderNumber: assignment.attenderNumber || attenderData.contactNum || 'N/A',
-            };
-          } catch (err) {
-            console.error('Error fetching assignment details:', err);
-            return {
-              ...assignment,
-              driverName: assignment.driverName || 'Unknown Driver',
-              busNumber: assignment.busNumber || 'Unknown Bus',
-              busModel: assignment.busModel || 'Unknown Model',
-              routeName: assignment.routeName || 'Unknown Route',
-              status: assignment.status || 'Unassigned',
-              driverNumber: assignment.driverNumber || 'N/A',
-              attenderName: assignment.attenderName || 'No Attender',
-              attenderNumber: assignment.attenderNumber || 'N/A',
-            };
-          }
-        })
-      );
-
-      setAssignments(formattedAssignments);
+      setAssignments(Array.isArray(data) ? data : []);
 
     } catch (error) {
       console.error('Error fetching assignments:', error);
       setError('Failed to load assignments. Please try again.');
+      setAssignments([]);
     } finally {
       setIsLoading(false);
     }
@@ -373,6 +334,11 @@ const TripAssignPortal = () => {
       return;
     }
 
+    if (!API_BASE_URL) {
+      setError('API configuration is missing');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -430,7 +396,7 @@ const TripAssignPortal = () => {
         setSelectedDate(new Date().toISOString().split('T')[0]);
         setSelectedTime('12:00');
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
         setError(`Failed to create assignment: ${errorData.message || 'Unknown error'}`);
       }
     } catch (error) {
@@ -441,8 +407,18 @@ const TripAssignPortal = () => {
     }
   };
 
-  // Handle assignment deletion
+  // Handle assignment deletion - Fixed implementation
   const handleDeleteAssignment = async (assignmentId) => {
+    if (!assignmentId) {
+      setError('Invalid assignment ID');
+      return;
+    }
+
+    if (!API_BASE_URL) {
+      setError('API configuration is missing');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -454,6 +430,7 @@ const TripAssignPortal = () => {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -466,7 +443,8 @@ const TripAssignPortal = () => {
         showSuccess('Assignment deleted successfully!');
         await fetchAssignments();
       } else {
-        setError('Failed to delete assignment');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to delete assignment' }));
+        setError(errorData.message || 'Failed to delete assignment');
       }
     } catch (error) {
       console.error('Error deleting assignment:', error);
@@ -483,12 +461,12 @@ const TripAssignPortal = () => {
 
   // Filter assignments based on search term
   const filteredAssignments = assignments.filter((assignment) =>
-    assignment.driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.busNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.routeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.attenderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.busModel.toLowerCase().includes(searchTerm.toLowerCase())
+    assignment.driverName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.busNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.routeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.attenderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.busModel?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination
@@ -511,7 +489,7 @@ const TripAssignPortal = () => {
 
   // Get status color
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'active':
         return 'bg-green-500 text-white';
       case 'on break':
@@ -576,385 +554,390 @@ const TripAssignPortal = () => {
 
   return (
     <div className="animate-in fade-in-up duration-700">
-      {/* Success Message */}
-      {successMessage && (
-        <SuccessMessage 
-          message={successMessage} 
-          onClose={() => setSuccessMessage('')} 
-        />
-      )}
-
-      {/* Header */}
-      <div className="text-center mb-8 sm:mb-12">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
-          <span className="bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-            Trip Assignment
-          </span>
-        </h1>
-        <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Assign drivers, buses, and attenders to routes efficiently
-        </p>
-      </div>
-
-      {/* Assignment Form */}
-      <Card className="bg-background dark:bg-card/60 border-2 border-border dark:border-purple-800/30 rounded-xl overflow-hidden shadow-lg dark:shadow-purple-500/5 mb-8">
-        <CardContent className="p-6">
-          <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            Create New Assignment
-          </h2>
-          
-          {/* Form Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-            {/* Date Picker */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                Date
-              </label>
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                min={today}
-                className="bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300"
-              />
-            </div>
-
-            {/* Time Picker */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                Time
-              </label>
-              <Input
-                type="time"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300"
-              />
-            </div>
-
-            {/* Route Dropdown */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                Route
-              </label>
-              <select
-                value={selectedRoute}
-                onChange={(e) => setSelectedRoute(e.target.value)}
-                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
-              >
-                <option value="">Select Route</option>
-                {routes.map((route) => (
-                  <option key={route.stvRouteId} value={route.stvRouteId}>
-                    {route.routeName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Bus Dropdown */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Bus className="h-4 w-4" />
-                Bus ({availableBuses.length} available)
-              </label>
-              <select
-                value={selectedBus}
-                onChange={(e) => setSelectedBus(e.target.value)}
-                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
-              >
-                <option value="">Select Bus</option>
-                {availableBuses.map((bus) => (
-                  <option key={bus.stvBusId} value={bus.stvBusId}>
-                    {bus.busNumber} ({bus.busModel})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Driver Dropdown */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <User className="h-4 w-4" />
-                Driver ({availableDrivers.length} available)
-              </label>
-              <select
-                value={selectedDriver}
-                onChange={(e) => setSelectedDriver(e.target.value)}
-                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
-              >
-                <option value="">Select Driver</option>
-                {availableDrivers.map((driver) => (
-                  <option key={driver.stvDriverId} value={driver.stvDriverId}>
-                    {driver.userName} {driver.contactNumber ? `(${driver.contactNumber})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Attender Dropdown */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                Attender ({availableAttenders.length} available)
-              </label>
-              <select
-                value={selectedAttender}
-                onChange={(e) => setSelectedAttender(e.target.value)}
-                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
-              >
-                <option value="">Select Attender</option>
-                {availableAttenders.map((attender) => (
-                  <option key={attender.stvAttenderId} value={attender.stvAttenderId}>
-                    {attender.username} {attender.contactNum ? `(${attender.contactNum})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Assign Button */}
-            <div className="space-y-2 md:col-span-2 lg:col-span-1">
-              <label className="text-sm font-medium text-transparent">Action</label>
-              <Button
-                onClick={handleAssign}
-                disabled={!selectedRoute || !selectedDriver || !selectedBus || !selectedAttender || !selectedDate || isLoading}
-                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Assigning...' : 'Assign Trip'}
-              </Button>
-            </div>
-
-            {/* Refresh Button */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-transparent">Refresh</label>
-              <Button
-                onClick={handleRefresh}
-                disabled={isLoading}
-                variant="outline"
-                className="w-full border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 text-foreground hover:text-foreground hover:bg-accent dark:hover:bg-purple-950/30 bg-background dark:bg-card/60 transition-all duration-300"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Error Display */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-lg">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
-            <div className="text-red-800 dark:text-red-200">{error}</div>
-          </div>
-        </div>
-      )}
-
-      {/* Search and Controls */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search assignments by driver, bus, route, or status..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-background border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:bg-card/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300 text-foreground placeholder:text-muted-foreground"
+      <div className="container mx-auto px-4 py-8">
+        {/* Success Message */}
+        {successMessage && (
+          <SuccessMessage 
+            message={successMessage} 
+            onClose={() => setSuccessMessage('')} 
           />
-        </div>
-      </div>
+        )}
 
-      {/* Assignments Table */}
-      <Card className="bg-background dark:bg-card/60 border-2 border-border dark:border-purple-800/30 rounded-xl overflow-hidden shadow-lg dark:shadow-purple-500/5">
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-muted/50 dark:bg-purple-950/20">
-                <tr className="border-b-2 border-border dark:border-purple-500/30">
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Driver</th>
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Bus</th>
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Bus Model</th>
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Route</th>
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Status</th>
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Date & Time</th>
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Attender</th>
-                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-background dark:bg-transparent">
-                {isLoading ? (
-                  [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
-                ) : currentAssignments.length > 0 ? (
-                  currentAssignments.map((assignment, index) => (
-                    <tr
-                      key={assignment.id}
-                      className={`border-b border-border dark:border-purple-500/20 hover:bg-muted/30 dark:hover:bg-purple-950/30 transition-colors duration-200 ${
-                        index % 2 === 0 ? "bg-card/20 dark:bg-card/10" : "bg-transparent"
-                      }`}
-                    >
-                      <td className="p-4">
-                        <div>
-                          <div className="font-medium text-foreground text-base">{assignment.driverName}</div>
-                          <div className="text-sm text-muted-foreground">{assignment.driverNumber}</div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="font-medium text-foreground">{assignment.busNumber}</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="text-foreground">{assignment.busModel}</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="text-foreground">{assignment.routeName}</div>
-                      </td>
-                      <td className="p-4">
-                        <Badge className={`${getStatusColor(assignment.status)} font-medium`}>
-                          {assignment.status}
-                        </Badge>
-                      </td>
-                      <td className="p-4">
-                        <div className="text-foreground font-medium">{assignment.bookingDate}</div>
-                        <div className="text-sm text-muted-foreground">{assignment.time}</div>
-                      </td>
-                      <td className="p-4">
-                        <div>
-                          <div className="font-medium text-foreground">{assignment.attenderName}</div>
-                          <div className="text-sm text-muted-foreground">{assignment.attenderNumber}</div>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteAssignment(assignment.id)}
-                          className="border-2 border-red-200 hover:border-red-400 dark:border-red-800/50 dark:hover:border-red-600 text-red-600 hover:text-white hover:bg-red-600 dark:text-red-400 dark:hover:text-white transition-all duration-300"
-                          disabled={isLoading}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+        {/* Header */}
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
+            <span className="bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
+              Trip Assignment Portal
+            </span>
+          </h1>
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Assign drivers, buses, and attenders to routes efficiently with our professional management system
+          </p>
+        </div>
+
+        {/* Assignment Form */}
+        <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl mb-8 transition-all duration-300 hover:shadow-2xl hover:border-purple-300 dark:hover:border-purple-600">
+          <CardContent className="p-8">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
+                <Calendar className="h-6 w-6 text-white" />
+              </div>
+              Create New Assignment
+            </h2>
+            
+            {/* Form Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+              {/* Date Picker */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Trip Date
+                </label>
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={today}
+                  className="bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 rounded-lg shadow-sm focus:shadow-md text-gray-800 dark:text-gray-100"
+                />
+              </div>
+
+              {/* Time Picker */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Departure Time
+                </label>
+                <Input
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 rounded-lg shadow-sm focus:shadow-md text-gray-800 dark:text-gray-100"
+                />
+              </div>
+
+              {/* Route Dropdown */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Route Selection
+                </label>
+                <select
+                  value={selectedRoute}
+                  onChange={(e) => setSelectedRoute(e.target.value)}
+                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                >
+                  <option value="">Select Route</option>
+                  {routes.map((route) => (
+                    <option key={route.stvRouteId} value={route.stvRouteId}>
+                      {route.routeName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Bus Dropdown */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                  <Bus className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Bus ({availableBuses.length} available)
+                </label>
+                <select
+                  value={selectedBus}
+                  onChange={(e) => setSelectedBus(e.target.value)}
+                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                >
+                  <option value="">Select Bus</option>
+                  {availableBuses.map((bus) => (
+                    <option key={bus.stvBusId} value={bus.stvBusId}>
+                      {bus.busNumber} ({bus.busModel})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Driver Dropdown */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                  <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Driver ({availableDrivers.length} available)
+                </label>
+                <select
+                  value={selectedDriver}
+                  onChange={(e) => setSelectedDriver(e.target.value)}
+                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                >
+                  <option value="">Select Driver</option>
+                  {availableDrivers.map((driver) => (
+                    <option key={driver.stvDriverId} value={driver.stvDriverId}>
+                      {driver.userName} {driver.contactNumber ? `(${driver.contactNumber})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Attender Dropdown */}
+              <div className="space-y-3">
+                <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                  <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Attender ({availableAttenders.length} available)
+                </label>
+                <select
+                  value={selectedAttender}
+                  onChange={(e) => setSelectedAttender(e.target.value)}
+                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                >
+                  <option value="">Select Attender</option>
+                  {availableAttenders.map((attender) => (
+                    <option key={attender.stvAttenderId} value={attender.stvAttenderId}>
+                      {attender.username} {attender.contactNum ? `(${attender.contactNum})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Assign Button */}
+              <div className="space-y-3 md:col-span-2 lg:col-span-1">
+                <label className="text-sm font-medium text-transparent">Action</label>
+                <Button
+                  onClick={handleAssign}
+                  disabled={!selectedRoute || !selectedDriver || !selectedBus || !selectedAttender || !selectedDate || isLoading}
+                  className="w-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-semibold py-3 rounded-lg"
+                >
+                  {isLoading ? 'Assigning...' : 'Assign Trip'}
+                </Button>
+              </div>
+
+              {/* Refresh Button */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-transparent">Refresh</label>
+                <Button
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  variant="outline"
+                  className="w-full border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-white dark:bg-gray-700 transition-all duration-300 font-semibold py-3 rounded-lg shadow-sm hover:shadow-md"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh Data
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-8 p-6 bg-red-50 dark:bg-red-950/40 border-2 border-red-200 dark:border-red-800/50 rounded-xl shadow-lg">
+            <div className="flex items-center">
+              <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400 mr-3" />
+              <div className="text-red-800 dark:text-red-200 font-medium">{error}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Search and Controls */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-500" />
+            <Input
+              placeholder="Search assignments by driver, bus, route, or status..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 bg-white border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-700 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 text-gray-800 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-lg shadow-sm focus:shadow-md py-3"
+            />
+          </div>
+        </div>
+
+        {/* Assignments Table */}
+        <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-750">
+                  <tr className="border-b-2 border-purple-200 dark:border-purple-600">
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Driver</th>
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Bus</th>
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Bus Model</th>
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Route</th>
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Status</th>
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Date & Time</th>
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Attender</th>
+                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800">
+                  {isLoading ? (
+                    [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
+                  ) : currentAssignments.length > 0 ? (
+                    currentAssignments.map((assignment, index) => (
+                      <tr
+                        key={assignment.id}
+                        className={`border-b border-gray-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors duration-200 ${
+                          index % 2 === 0 ? "bg-gray-50/30 dark:bg-gray-750/30" : "bg-white dark:bg-gray-800"
+                        }`}
+                      >
+                        <td className="p-6">
+                          <div>
+                            <div className="font-semibold text-gray-800 dark:text-gray-100 text-base">{assignment.driverName || 'N/A'}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{assignment.driverNumber || 'N/A'}</div>
+                          </div>
+                        </td>
+                        <td className="p-6">
+                          <div className="font-medium text-gray-800 dark:text-gray-100">{assignment.busNumber || 'N/A'}</div>
+                        </td>
+                        <td className="p-6">
+                          <div className="text-gray-700 dark:text-gray-200">{assignment.busModel || 'N/A'}</div>
+                        </td>
+                        <td className="p-6">
+                          <div className="text-gray-700 dark:text-gray-200">{assignment.routeName || 'N/A'}</div>
+                        </td>
+                        <td className="p-6">
+                          <Badge className={`${getStatusColor(assignment.status)} font-medium px-3 py-1 rounded-full`}>
+                            {assignment.status || 'Unknown'}
+                          </Badge>
+                        </td>
+                        <td className="p-6">
+                          <div className="text-gray-700 dark:text-gray-200 font-medium">{assignment.bookingDate || 'N/A'}</div>
+                          <div className="text-sm text-gray-600 dark:text-gray-400">{assignment.time || 'N/A'}</div>
+                        </td>
+                        <td className="p-6">
+                          <div>
+                            <div className="font-medium text-gray-800 dark:text-gray-100">{assignment.attenderName || 'N/A'}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{assignment.attenderNumber || 'N/A'}</div>
+                          </div>
+                        </td>
+                        <td className="p-6">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDeleteAssignment(assignment.id)}
+                            className="border-2 border-red-200 hover:border-red-400 dark:border-red-800/50 dark:hover:border-red-600 text-red-600 hover:text-white hover:bg-red-600 dark:text-red-400 dark:hover:text-white transition-all duration-300 rounded-lg shadow-sm hover:shadow-md"
+                            disabled={isLoading}
+                            data-testid={`delete-assignment-${assignment.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="p-12 text-center">
+                        <Bus className="h-20 w-20 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">No assignments found</h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          {searchTerm 
+                            ? 'Try adjusting your search criteria'
+                            : 'No trip assignments available at the moment'
+                          }
+                        </p>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" className="p-8 text-center">
-                      <Bus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-foreground mb-2">No assignments found</h3>
-                      <p className="text-muted-foreground">
-                        {searchTerm 
-                          ? 'Try adjusting your search criteria'
-                          : 'No trip assignments available at the moment'
-                        }
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Pagination */}
-      {!isLoading && !error && totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-border/30">
-          <div className="text-sm text-muted-foreground">
-            Showing {currentAssignments.length > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, filteredAssignments.length)} of {filteredAssignments.length} assignments
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToFirstPage}
-              disabled={currentPage === 1}
-              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            
-            <div className="flex items-center gap-1">
-              {totalPages <= 7 ? (
-                [...Array(totalPages)].map((_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={currentPage === pageNum ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => goToPage(pageNum)}
-                      className={currentPage === pageNum ? 
-                        "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-sm" : 
-                        "border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 bg-background dark:bg-card/60 transition-all duration-300"
-                      }
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })
-              ) : (
-                getPaginationNumbers().map((pageNum, index) => {
-                  if (pageNum === '...') {
-                    return (
-                      <span key={`dots-${index}`} className="px-2 py-1 text-muted-foreground">
-                        ...
-                      </span>
-                    );
-                  }
-                  
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={currentPage === pageNum ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => goToPage(pageNum)}
-                      className={currentPage === pageNum ? 
-                        "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-sm" : 
-                        "border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 bg-background dark:bg-card/60 transition-all duration-300"
-                      }
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })
-              )}
+        {/* Pagination */}
+        {!isLoading && !error && totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Showing {currentAssignments.length > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, filteredAssignments.length)} of {filteredAssignments.length} assignments
             </div>
             
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToLastPage}
-              disabled={currentPage === totalPages}
-              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToFirstPage}
+                disabled={currentPage === 1}
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToPreviousPage}
+                disabled={currentPage === 1}
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {totalPages <= 7 ? (
+                  [...Array(totalPages)].map((_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => goToPage(pageNum)}
+                        className={currentPage === pageNum ? 
+                          "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md rounded-lg" : 
+                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                        }
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })
+                ) : (
+                  getPaginationNumbers().map((pageNum, index) => {
+                    if (pageNum === '...') {
+                      return (
+                        <span key={`dots-${index}`} className="px-2 py-1 text-gray-500 dark:text-gray-400">
+                          ...
+                        </span>
+                      );
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => goToPage(pageNum)}
+                        className={currentPage === pageNum ? 
+                          "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md rounded-lg" : 
+                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                        }
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })
+                )}
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToNextPage}
+                disabled={currentPage === totalPages}
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToLastPage}
+                disabled={currentPage === totalPages}
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
