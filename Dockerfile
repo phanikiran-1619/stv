@@ -10,6 +10,6 @@ COPY . .
 RUN npm run build
 RUN npm install -g serve
 
-EXPOSE 4040
+EXPOSE 3030
 
-CMD ["serve", "-s", "build", "-l", "4040"]
+CMD ["serve", "-s", "build", "-l", "3030"]
