@@ -1,360 +1,509 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
-import { Button } from '../components/ui/button.jsx';
-import { Bus, Users, Settings, BarChart3, LogOut, ArrowLeft, Activity, Shield, Database, Bell, TrendingUp, Clock, Star, CheckCircle } from 'lucide-react';
-import { removeToken, getUserRole } from '../lib/token.js';
-import ThemeToggle from '../components/ThemeToggle.jsx';
+import React, { useEffect, useState } from "react"
+import {
+  User,
+  Bus,
+  Users,
+  UserCheck,
+  Phone,
+  MapPin,
+  Clock,
+  ChevronRight,
+  ChevronDown,
+  RefreshCw,
+} from "lucide-react"
+import Navbar from "../components/Navbar.jsx"
+import { Button } from "../components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
+import { Badge } from "../components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select"
+import { useNavigate } from "react-router-dom"
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const role = getUserRole();
+  const navigate = useNavigate()
+  
+  /* ---------- State ---------- */
+  const [routes, setRoutes] = useState([])
+  const [selectedRouteId, setSelectedRouteId] = useState("")
+  const [assignments, setAssignments] = useState([])
+  const [selectedBusId, setSelectedBusId] = useState("")
 
-  const handleLogout = () => {
-    removeToken();
-    navigate('/login');
-  };
+  const [passengers, setPassengers] = useState([])
+  const [loading, setLoading] = useState(false)
 
-  const dashboardStats = [
-    { 
-      title: 'Total Users', 
-      count: '1,247', 
-      change: '+12%',
-      icon: Users, 
-      gradient: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-      textColor: 'text-blue-600 dark:text-blue-400',
-      borderColor: 'border-blue-200 dark:border-blue-700'
-    },
-    { 
-      title: 'Active Sessions', 
-      count: '89', 
-      change: '+5%',
-      icon: Activity, 
-      gradient: 'from-emerald-500 to-emerald-600',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
-      textColor: 'text-emerald-600 dark:text-emerald-400',
-      borderColor: 'border-emerald-200 dark:border-emerald-700'
-    },
-    { 
-      title: 'System Health', 
-      count: '98.2%', 
-      change: '+0.8%',
-      icon: Shield, 
-      gradient: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-950/20',
-      textColor: 'text-purple-600 dark:text-purple-400',
-      borderColor: 'border-purple-200 dark:border-purple-700'
-    },
-    { 
-      title: 'Revenue Today', 
-      count: '$12.4K', 
-      change: '+24%',
-      icon: TrendingUp, 
-      gradient: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
-      textColor: 'text-orange-600 dark:text-orange-400',
-      borderColor: 'border-orange-200 dark:border-orange-700'
+  const [showPassengerList, setShowPassengerList] = useState(false)
+  const [passengerFilter, setPassengerFilter] = useState("all")
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  /* ---------- Helpers ---------- */
+  const token = () => localStorage.getItem("admintoken") || ""
+
+  /* ---------- Check authentication ---------- */
+  useEffect(() => {
+    const adminToken = localStorage.getItem("admintoken")
+    if (!adminToken) {
+      navigate('/login', { replace: true })
+      return
     }
-  ];
+  }, [navigate])
 
-  const quickActions = [
-    {
-      title: 'User Management',
-      description: 'Manage user accounts, roles, permissions and access controls across the entire platform.',
-      icon: Users,
-      gradient: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50 dark:bg-purple-950/20',
-      borderColor: 'border-purple-200 dark:border-purple-700',
-      testId: 'manage-users-button'
-    },
-    {
-      title: 'Analytics Dashboard',
-      description: 'View comprehensive analytics, reports, and insights about system usage and performance metrics.',
-      icon: BarChart3,
-      gradient: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-      borderColor: 'border-blue-200 dark:border-blue-700',
-      testId: 'view-analytics-button'
-    },
-    {
-      title: 'System Settings',
-      description: 'Configure system settings, integrations, platform preferences, and operational parameters.',
-      icon: Settings,
-      gradient: 'from-emerald-500 to-emerald-600',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
-      borderColor: 'border-emerald-200 dark:border-emerald-700',
-      testId: 'system-settings-button'
-    },
-    {
-      title: 'Database Management',
-      description: 'Monitor database performance, execute backups, and manage maintenance schedules effectively.',
-      icon: Database,
-      gradient: 'from-orange-500 to-orange-600',
-      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
-      borderColor: 'border-orange-200 dark:border-orange-700',
-      testId: 'database-management-button'
-    },
-    {
-      title: 'Notifications Center',
-      description: 'Configure system alerts, user notifications, communication settings, and automated messages.',
-      icon: Bell,
-      gradient: 'from-red-500 to-red-600',
-      bgColor: 'bg-red-50 dark:bg-red-950/20',
-      borderColor: 'border-red-200 dark:border-red-700',
-      testId: 'notifications-button'
-    },
-    {
-      title: 'Activity Logs',
-      description: 'Review detailed system activity, comprehensive audit trails, and security event logs.',
-      icon: Activity,
-      gradient: 'from-indigo-500 to-indigo-600',
-      bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
-      borderColor: 'border-indigo-200 dark:border-indigo-700',
-      testId: 'activity-logs-button'
+  /* ---------- Browser back button protection ---------- */
+  useEffect(() => {
+    const handlePopState = (event) => {
+      event.preventDefault()
+      const confirmLogout = window.confirm(
+        "Are you sure you want to go back? This will logout and redirect you to the login page."
+      )
+      
+      if (confirmLogout) {
+        // Clear all data and logout
+        localStorage.clear()
+        sessionStorage.clear()
+        console.clear()
+        // Clear cookies
+        document.cookie.split(";").forEach((cookie) => {
+          const name = cookie.split("=")[0].trim()
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`
+        })
+        navigate('/login', { replace: true })
+      } else {
+        // Stay on current page
+        window.history.pushState(null, '', window.location.pathname)
+      }
     }
-  ];
 
-  const recentActivities = [
-    {
-      title: 'New user registration',
-      description: 'john.doe@example.com joined the platform',
-      time: '2 minutes ago',
-      icon: Users,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-100 dark:bg-blue-950/30'
-    },
-    {
-      title: 'System backup completed',
-      description: 'All databases backed up successfully',
-      time: '1 hour ago',
-      icon: CheckCircle,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-100 dark:bg-emerald-950/30'
-    },
-    {
-      title: 'Database maintenance',
-      description: 'Scheduled optimization completed',
-      time: '3 hours ago',
-      icon: Database,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-100 dark:bg-purple-950/30'
-    },
-    {
-      title: 'Security alert resolved',
-      description: 'Failed login attempts successfully blocked',
-      time: '5 hours ago',
-      icon: Shield,
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-100 dark:bg-orange-950/30'
+    window.addEventListener('popstate', handlePopState)
+    // Push current state to prevent back navigation
+    window.history.pushState(null, '', window.location.pathname)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
     }
-  ];
+  }, [navigate])
 
+  /* ---------- API Calls ---------- */
+  useEffect(() => {
+    const adminToken = localStorage.getItem("admintoken")
+    if (!adminToken) return
+    
+    // Initial fetch: routes
+    fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/routes`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        // Ensure data is an array
+        setRoutes(Array.isArray(data) ? data : [])
+      })
+      .catch((error) => {
+        console.error("Error fetching routes:", error)
+        setRoutes([])
+      })
+  }, [])
+
+  useEffect(() => {
+    const adminToken = localStorage.getItem("admintoken")
+    if (!selectedRouteId || !adminToken) {
+      setAssignments([])
+      // Clear bus selection when route changes
+      setSelectedBusId("")
+      // Clear passengers data
+      setPassengers([])
+      setShowPassengerList(false)
+      return
+    }
+    fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/assignments/route/${selectedRouteId}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        // Ensure data is an array
+        setAssignments(Array.isArray(data) ? data : [])
+      })
+      .catch((error) => {
+        console.error("Error fetching assignments:", error)
+        setAssignments([])
+      })
+  }, [selectedRouteId])
+
+  useEffect(() => {
+    const adminToken = localStorage.getItem("admintoken")
+    if (!selectedBusId || !adminToken) {
+      setPassengers([])
+      setShowPassengerList(false)
+      return
+    }
+    setLoading(true)
+    fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/v1/passenger/bus/${selectedBusId}/all-passengers`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        // Ensure data is an array
+        setPassengers(Array.isArray(data) ? data : [])
+      })
+      .catch((error) => {
+        console.error("Error fetching passengers:", error)
+        setPassengers([])
+      })
+      .finally(() => setLoading(false))
+  }, [selectedBusId])
+
+  /* ---------- Handlers ---------- */
+  const handleRouteChange = (routeId) => {
+    setSelectedRouteId(routeId)
+    // Clear bus selection when route changes
+    setSelectedBusId("")
+    // Clear passengers data when route changes
+    setPassengers([])
+    setShowPassengerList(false)
+    // Reset passenger filter
+    setPassengerFilter("all")
+  }
+
+  const handleBusChange = (busId) => {
+    setSelectedBusId(busId)
+    // Reset passenger list display and filter when bus changes
+    setShowPassengerList(false)
+    setPassengerFilter("all")
+  }
+
+  const handleSearch = () => {
+    // everything is reactive via useEffect; nothing extra to do
+    setShowPassengerList(false)
+  }
+
+  /* ---------- Filtering ---------- */
+  const filteredPassengers = () => {
+    switch (passengerFilter) {
+      case "checked_in":
+        return passengers.filter((p) => p.status === "CHECKED_IN")
+      case "not_checked_in":
+        return passengers.filter((p) => p.status === "NOT_CHECKED_IN")
+      case "cancelled":
+        return passengers.filter((p) => p.status === "CANCELLED")
+      case "empty":
+        return []
+      default:
+        return passengers
+    }
+  }
+
+  const counts = {
+    all: passengers.length,
+    checked_in: passengers.filter((p) => p.status === "CHECKED_IN").length,
+    not_checked_in: passengers.filter((p) => p.status === "NOT_CHECKED_IN").length,
+    cancelled: passengers.filter((p) => p.status === "CANCELLED").length,
+    empty: 0, // no seat-level info in passenger api
+  }
+
+  const statusColor = (status) => {
+    switch (status) {
+      case "CHECKED_IN":
+        return "bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/50"
+      case "NOT_CHECKED_IN":
+        return "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/50"
+      case "CANCELLED":
+        return "bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/50"
+      default:
+        return "bg-gray-500/20 text-gray-600 dark:text-gray-400 border-gray-500/50"
+    }
+  }
+
+  /* ---------- UI ---------- */
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-foreground transition-colors duration-300">
-      {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b-2 border-purple-200 dark:border-purple-700 sticky top-0 z-50 shadow-lg">
-        <div className="container mx-auto px-6 py-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <Link to="/">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all duration-300 font-medium"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Home
-                </Button>
-              </Link>
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Bus className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <span className="text-xl font-bold text-gray-800 dark:text-gray-100">EmcomServ</span>
-                  <span className="text-sm text-purple-600 dark:text-purple-400 ml-3 font-semibold bg-purple-100 dark:bg-purple-950/30 px-2 py-1 rounded-full">Admin Panel</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-right hidden sm:block bg-purple-50 dark:bg-purple-950/20 px-4 py-2 rounded-xl border border-purple-200 dark:border-purple-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Welcome back,</p>
-                <p className="font-bold text-purple-600 dark:text-purple-400">{role || 'Administrator'}</p>
-              </div>
-              <ThemeToggle />
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                size="sm"
-                className="border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-400 dark:hover:border-red-600 transition-all duration-300 font-medium"
-                data-testid="logout-button"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-10">
-        {/* Welcome Section */}
-        <div className="mb-12 text-center">
-          <div className="inline-flex items-center gap-2 bg-purple-100 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-700 rounded-full px-4 py-2 mb-6">
-            <Star className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Administrative Control Center</span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
-              Admin Dashboard
-            </span>
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Comprehensive administrative controls for managing your EmcomServ platform with advanced analytics and system monitoring
-          </p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {dashboardStats.map((stat, index) => (
-            <Card key={index} className={`bg-white dark:bg-gray-800 border-2 ${stat.borderColor} hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 shadow-lg hover:shadow-xl hover:shadow-purple-500/20 rounded-2xl`}>
-              <CardContent className="p-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">{stat.title}</p>
-                    <p className="text-3xl font-bold mt-2 text-gray-800 dark:text-gray-100">{stat.count}</p>
-                    <p className={`text-sm mt-2 ${stat.textColor} font-semibold flex items-center gap-1`}>
-                      <TrendingUp className="w-4 h-4" />
-                      {stat.change} from last week
-                    </p>
+      <Navbar isAdmin={true} showBackButton={false} />
+      <main className="container mx-auto pt-24 px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Search card */}
+          <Card className="mb-8 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/70 dark:border-purple-700/70 shadow-2xl rounded-3xl overflow-hidden hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-700">
+            <CardHeader
+              className="cursor-pointer hover:bg-purple-50/50 dark:hover:bg-purple-950/30 transition-colors"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Bus className="w-6 h-6 text-white" />
                   </div>
-                  <div className={`w-16 h-16 ${stat.bgColor} rounded-2xl flex items-center justify-center shadow-lg`}>
-                    <stat.icon className={`w-8 h-8 ${stat.textColor}`} />
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent">
+                    Admin Panel
+                  </CardTitle>
+                </div>
+                {isExpanded ? (
+                  <ChevronDown className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                ) : (
+                  <ChevronRight className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                )}
+              </div>
+            </CardHeader>
+
+            {isExpanded && (
+              <CardContent className="space-y-6 px-8 pb-8">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Route select */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Routes</label>
+                    <Select onValueChange={handleRouteChange} value={selectedRouteId}>
+                      <SelectTrigger className="bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 text-gray-900 dark:text-white rounded-xl h-12 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300">
+                        <SelectValue placeholder="Select Route" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-xl shadow-xl">
+                        {routes.map((r) => (
+                          <SelectItem key={r.stvRouteId} value={r.stvRouteId} className="hover:bg-purple-50 dark:hover:bg-purple-950/30">
+                            {r.routeName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Bus select */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Buses</label>
+                    <Select
+                      onValueChange={handleBusChange}
+                      value={selectedBusId}
+                      disabled={!selectedRouteId || assignments.length === 0}
+                    >
+                      <SelectTrigger className="bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 text-gray-900 dark:text-white rounded-xl h-12 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 disabled:opacity-50">
+                        <SelectValue placeholder="Select Bus" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-xl shadow-xl">
+                        {Array.isArray(assignments) && assignments.length > 0 ? (
+                          assignments.map((a) => (
+                            <SelectItem key={a.id} value={a.busId} className="hover:bg-purple-50 dark:hover:bg-purple-950/30">
+                              {a.busId} &nbsp; (model: {a.busmodel || "?"}, capacity: {a.busCapacity || "—"})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-buses" disabled>
+                            No buses available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
+            )}
+          </Card>
 
-        {/* Quick Actions Grid */}
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold mb-8 text-center text-gray-800 dark:text-gray-100">Administrative Tools</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {quickActions.map((action, index) => (
-              <Card key={index} className={`group bg-white dark:bg-gray-800 border-2 ${action.borderColor} hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 shadow-lg hover:shadow-xl hover:shadow-purple-500/20 rounded-3xl overflow-hidden`}>
-                {/* Top gradient accent */}
-                <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${action.gradient}`}></div>
-                
-                <CardHeader className="pb-4 pt-8">
-                  <CardTitle className="flex items-center space-x-4">
-                    <div className={`w-14 h-14 ${action.bgColor} rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
-                      <action.icon className={`w-7 h-7 ${action.gradient.includes('purple') ? 'text-purple-600 dark:text-purple-400' : action.gradient.includes('blue') ? 'text-blue-600 dark:text-blue-400' : action.gradient.includes('emerald') ? 'text-emerald-600 dark:text-emerald-400' : action.gradient.includes('orange') ? 'text-orange-600 dark:text-orange-400' : action.gradient.includes('red') ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400'}`} />
+          {/* Details cards */}
+          {selectedBusId && Array.isArray(assignments) && assignments.length > 0 && (
+            <div className="space-y-8">
+              {/* Bus summary */}
+              <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 dark:from-purple-500/20 dark:to-blue-500/20 border-2 border-purple-300/50 dark:border-purple-600/50 rounded-2xl shadow-xl backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{selectedBusId}</h2>
+                      <p className="text-gray-700 dark:text-gray-300">
+                        {routes.find((r) => r.stvRouteId === selectedRouteId)?.routeName}
+                      </p>
+                      <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        <span>
+                          <Clock className="w-4 h-4 inline mr-1" />
+                          {assignments[0]?.time || "—"}
+                        </span>
+                        <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/50">{assignments[0]?.status}</Badge>
+                      </div>
                     </div>
-                    <span className="text-xl font-bold text-gray-800 dark:text-gray-100">{action.title}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 pb-8">
-                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                    {action.description}
-                  </p>
-                  <Button 
-                    className={`w-full bg-gradient-to-r ${action.gradient} hover:opacity-90 text-white transition-all duration-300 transform group-hover:scale-105 shadow-lg hover:shadow-xl rounded-xl py-3 font-semibold`}
-                    data-testid={action.testId}
-                  >
-                    Access {action.title}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Activity & System Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Recent Activity */}
-          <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 shadow-xl rounded-3xl">
-            <CardHeader className="pb-6">
-              <CardTitle className="flex items-center space-x-3 text-2xl">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-950/30 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <span className="text-gray-800 dark:text-gray-100">Recent Activity</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 dark:bg-gray-750 rounded-2xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">
-                    <div className={`w-12 h-12 ${activity.bgColor} rounded-xl flex items-center justify-center flex-shrink-0 shadow-md`}>
-                      <activity.icon className={`w-6 h-6 ${activity.color}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-800 dark:text-gray-100">{activity.title}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{activity.description}</p>
-                      <span className="text-xs text-gray-500 dark:text-gray-500 mt-2 inline-block">{activity.time}</span>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                        {passengers.length} / {assignments[0]?.busCapacity || "?"}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Passengers</div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          {/* System Overview */}
-          <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 shadow-xl rounded-3xl">
-            <CardHeader className="pb-6">
-              <CardTitle className="flex items-center space-x-3 text-2xl">
-                <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-950/30 rounded-xl flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <span className="text-gray-800 dark:text-gray-100">System Overview</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-5">
-                <div className="flex items-center justify-between py-3 px-4 bg-emerald-50 dark:bg-emerald-950/20 rounded-xl">
-                  <span className="font-semibold text-gray-800 dark:text-gray-100">Server Status</span>
-                  <span className="text-sm text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                    Online
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-3 px-4 bg-blue-50 dark:bg-blue-950/20 rounded-xl">
-                  <span className="font-semibold text-gray-800 dark:text-gray-100">Database</span>
-                  <span className="text-sm text-blue-600 dark:text-blue-400 font-bold flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    Connected
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-3 px-4 bg-purple-50 dark:bg-purple-950/20 rounded-xl">
-                  <span className="font-semibold text-gray-800 dark:text-gray-100">API Status</span>
-                  <span className="text-sm text-purple-600 dark:text-purple-400 font-bold flex items-center gap-2">
-                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    Operational
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-gray-750 rounded-xl">
-                  <span className="font-semibold text-gray-800 dark:text-gray-100">Last Backup</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">2 hours ago</span>
-                </div>
-                <div className="flex items-center justify-between py-3 px-4 bg-orange-50 dark:bg-orange-950/20 rounded-xl">
-                  <span className="font-semibold text-gray-800 dark:text-gray-100">Storage Used</span>
-                  <span className="text-sm text-orange-600 dark:text-orange-400 font-bold">68% (2.3TB)</span>
-                </div>
-                <div className="flex items-center justify-between py-3 px-4 bg-indigo-50 dark:bg-indigo-950/20 rounded-xl">
-                  <span className="font-semibold text-gray-800 dark:text-gray-100">Active Users</span>
-                  <span className="text-sm text-indigo-600 dark:text-indigo-400 font-bold">89 online</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Driver / Attender / Bus cards */}
+              {(() => {
+                const a = assignments.find(a => a.busId === selectedBusId) || assignments[0]
+                return (
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-blue-200/70 dark:border-blue-700/70 rounded-2xl shadow-xl hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-500">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                          <User className="w-5 h-5" />
+                          <span>Driver Details</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{a.driverName || a.driverId}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">ID: {a.driverId}</p>
+                        </div>
+                        {a.driverNumber && (
+                          <div className="flex items-center text-gray-700 dark:text-gray-300">
+                            <Phone className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
+                            {a.driverNumber}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-green-200/70 dark:border-green-700/70 rounded-2xl shadow-xl hover:border-green-300 dark:hover:border-green-600 transition-all duration-500">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2 text-green-600 dark:text-green-400">
+                          <UserCheck className="w-5 h-5" />
+                          <span>Attender Details</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{a.attenderName || a.attenderId}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">ID: {a.attenderId}</p>
+                        </div>
+                        {a.attenderNumber && (
+                          <div className="flex items-center text-gray-700 dark:text-gray-300">
+                            <Phone className="w-4 h-4 mr-2 text-green-600 dark:text-green-400" />
+                            {a.attenderNumber}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/70 dark:border-purple-700/70 rounded-2xl shadow-xl hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-500">
+                      <CardHeader>
+                        <CardTitle className="flex items-center space-x-2 text-purple-600 dark:text-purple-400">
+                          <Bus className="w-5 h-5" />
+                          <span>Bus Details</span>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Bus ID:</span>
+                            <span className="text-gray-900 dark:text-white font-semibold">{a.busId}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Model:</span>
+                            <span className="text-gray-900 dark:text-white">{a.busmodel || "—"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Capacity:</span>
+                            <span className="text-gray-900 dark:text-white">{a.busCapacity || "—"}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Total Bags:</span>
+                            <span className="text-gray-900 dark:text-white">{a.totalBags || "—"}</span>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => setShowPassengerList(!showPassengerList)}
+                          className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                        >
+                          <Users className="w-4 h-4 mr-2" />
+                          {showPassengerList ? "Hide" : "Show"} Passenger List
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )
+              })()}
+
+              {/* Passenger list */}
+              {showPassengerList && (
+                <Card className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/70 dark:border-purple-700/70 shadow-2xl rounded-2xl overflow-hidden hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-700">
+                  <CardHeader className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 dark:from-purple-500/20 dark:to-blue-500/20">
+                    <CardTitle className="flex items-center space-x-2 text-purple-600 dark:text-purple-400">
+                      <Users className="w-6 h-6" />
+                      <span>Passenger List</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="flex flex-wrap gap-3 mb-6">
+                      {(["all", "checked_in", "not_checked_in", "cancelled"]).map((f) => (
+                        <Button
+                          key={f}
+                          variant={passengerFilter === f ? "default" : "outline"}
+                          onClick={() => setPassengerFilter(f)}
+                          className={`rounded-full capitalize transition-all duration-300 ${
+                            passengerFilter === f
+                              ? f === "checked_in"
+                                ? "bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg hover:from-green-600 hover:to-green-700"
+                                : f === "not_checked_in"
+                                ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg hover:from-yellow-600 hover:to-yellow-700"
+                                : f === "cancelled"
+                                ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:from-red-600 hover:to-red-700"
+                                : "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg hover:from-purple-600 hover:to-purple-700"
+                              : "border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-950/30 hover:border-purple-300 dark:hover:border-purple-600"
+                          }`}
+                        >
+                          {f.replace("_", " ")} ({counts[f]})
+                        </Button>
+                      ))}
+                    </div>
+
+                    {loading ? (
+                      <div className="text-center py-8 text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
+                        <RefreshCw className="w-5 h-5 animate-spin text-purple-500" />
+                        Loading passengers...
+                      </div>
+                    ) : (
+                      <>
+                        <div className="overflow-x-auto rounded-xl border border-purple-200 dark:border-purple-700">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="bg-purple-50 dark:bg-purple-950/30 border-b border-purple-200 dark:border-purple-700">
+                                <th className="text-left p-4 font-semibold text-gray-700 dark:text-gray-300">ID</th>
+                                <th className="text-left p-4 font-semibold text-gray-700 dark:text-gray-300">Name</th>
+                                <th className="text-left p-4 font-semibold text-gray-700 dark:text-gray-300">Pick Up / Drop</th>
+                                <th className="text-left p-4 font-semibold text-gray-700 dark:text-gray-300">Seat</th>
+                                <th className="text-left p-4 font-semibold text-gray-700 dark:text-gray-300">Phone</th>
+                                <th className="text-left p-4 font-semibold text-gray-700 dark:text-gray-300">Bags</th>
+                                <th className="text-left p-4 font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredPassengers().map((p, idx) => (
+                                <tr
+                                  key={p.id}
+                                  className={`border-b border-gray-200 dark:border-gray-700 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 transition-colors duration-200 ${
+                                    idx % 2 === 0 ? "bg-gray-50/50 dark:bg-gray-800/50" : ""
+                                  }`}
+                                >
+                                  <td className="p-4 text-gray-900 dark:text-white">{p.id}</td>
+                                  <td className="p-4 text-gray-900 dark:text-white font-medium">{p.passengerName}</td>
+                                  <td className="p-4 text-gray-700 dark:text-gray-300">
+                                    <MapPin className="w-4 h-4 inline mr-1 text-purple-500" />
+                                    {p.boardingPoint} → {p.droppingPoint}
+                                  </td>
+                                  <td className="p-4 text-gray-900 dark:text-white">{p.seatNumber}</td>
+                                  <td className="p-4 text-gray-700 dark:text-gray-300">
+                                    <Phone className="w-4 h-4 inline mr-1 text-purple-500" />
+                                    {p.phoneNumber}
+                                  </td>
+                                  <td className="p-4 text-gray-900 dark:text-white">
+                                    {p.bagsCheckedIn}/{p.totalBagsAllowed}
+                                  </td>
+                                  <td className="p-4">
+                                    <Badge variant="outline" className={`${statusColor(p.status)} border font-medium`}>
+                                      {p.status.replace("_", " ")}
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {filteredPassengers().length === 0 && (
+                          <div className="text-center py-8 text-gray-600 dark:text-gray-400">No passengers found.</div>
+                        )}
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
-  );
-};
+  )
+}
 
-export default AdminDashboard;
+export default AdminDashboard

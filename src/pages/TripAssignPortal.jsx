@@ -407,10 +407,10 @@ const TripAssignPortal = () => {
     }
   };
 
-  // Handle assignment deletion - Fixed implementation
-  const handleDeleteAssignment = async (assignmentId) => {
-    if (!assignmentId) {
-      setError('Invalid assignment ID');
+  // Handle assignment deletion - Fixed to use driverId instead of assignmentId
+  const handleDeleteAssignment = async (assignment) => {
+    if (!assignment || !assignment.driverId) {
+      setError('Invalid assignment or missing driver ID');
       return;
     }
 
@@ -426,7 +426,7 @@ const TripAssignPortal = () => {
       const token = getToken();
       if (!token) return;
 
-      const response = await fetch(`${API_BASE_URL}/api/assignments/${assignmentId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/assignments/${assignment.driverId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -576,7 +576,7 @@ const TripAssignPortal = () => {
         </div>
 
         {/* Assignment Form */}
-        <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl mb-8 transition-all duration-300 hover:shadow-2xl hover:border-purple-300 dark:hover:border-purple-600">
+        <Card className="bg-gray-50/80 dark:bg-gray-800/80 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl mb-8 transition-all duration-300 hover:shadow-2xl hover:border-purple-300 dark:hover:border-purple-600">
           <CardContent className="p-8">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6 flex items-center gap-3">
               <div className="p-2 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg">
@@ -598,7 +598,7 @@ const TripAssignPortal = () => {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   min={today}
-                  className="bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 rounded-lg shadow-sm focus:shadow-md text-gray-800 dark:text-gray-100"
+                  className="bg-gray-50 dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 rounded-lg shadow-sm focus:shadow-md text-gray-800 dark:text-gray-100"
                 />
               </div>
 
@@ -612,7 +612,7 @@ const TripAssignPortal = () => {
                   type="time"
                   value={selectedTime}
                   onChange={(e) => setSelectedTime(e.target.value)}
-                  className="bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 rounded-lg shadow-sm focus:shadow-md text-gray-800 dark:text-gray-100"
+                  className="bg-gray-50 dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 rounded-lg shadow-sm focus:shadow-md text-gray-800 dark:text-gray-100"
                 />
               </div>
 
@@ -625,7 +625,7 @@ const TripAssignPortal = () => {
                 <select
                   value={selectedRoute}
                   onChange={(e) => setSelectedRoute(e.target.value)}
-                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                  className="w-full bg-gray-50 dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
                 >
                   <option value="">Select Route</option>
                   {routes.map((route) => (
@@ -645,7 +645,7 @@ const TripAssignPortal = () => {
                 <select
                   value={selectedBus}
                   onChange={(e) => setSelectedBus(e.target.value)}
-                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                  className="w-full bg-gray-50 dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
                 >
                   <option value="">Select Bus</option>
                   {availableBuses.map((bus) => (
@@ -665,7 +665,7 @@ const TripAssignPortal = () => {
                 <select
                   value={selectedDriver}
                   onChange={(e) => setSelectedDriver(e.target.value)}
-                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                  className="w-full bg-gray-50 dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
                 >
                   <option value="">Select Driver</option>
                   {availableDrivers.map((driver) => (
@@ -685,7 +685,7 @@ const TripAssignPortal = () => {
                 <select
                   value={selectedAttender}
                   onChange={(e) => setSelectedAttender(e.target.value)}
-                  className="w-full bg-white dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
+                  className="w-full bg-gray-50 dark:bg-gray-700 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md"
                 >
                   <option value="">Select Attender</option>
                   {availableAttenders.map((attender) => (
@@ -715,7 +715,7 @@ const TripAssignPortal = () => {
                   onClick={handleRefresh}
                   disabled={isLoading}
                   variant="outline"
-                  className="w-full border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-white dark:bg-gray-700 transition-all duration-300 font-semibold py-3 rounded-lg shadow-sm hover:shadow-md"
+                  className="w-full border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-gray-50 dark:bg-gray-700 transition-all duration-300 font-semibold py-3 rounded-lg shadow-sm hover:shadow-md"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                   Refresh Data
@@ -743,38 +743,36 @@ const TripAssignPortal = () => {
               placeholder="Search assignments by driver, bus, route, or status..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 bg-white border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-700 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 text-gray-800 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-lg shadow-sm focus:shadow-md py-3"
+              className="pl-12 bg-gray-50 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-800 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 text-gray-800 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-lg shadow-sm focus:shadow-md py-3"
             />
           </div>
         </div>
 
         {/* Assignments Table */}
-        <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl">
+        <Card className="bg-gray-50/80 dark:bg-gray-800/80 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-750">
-                  <tr className="border-b-2 border-purple-200 dark:border-purple-600">
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Driver</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Bus</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Bus Model</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Route</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Status</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Date & Time</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Attender</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Actions</th>
+                <thead className="bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-800 dark:to-purple-900">
+                  <tr className="border-b-2 border-purple-300 dark:border-purple-600">
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Driver</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Bus</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Bus Model</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Route</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Status</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Date & Time</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Attender</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800">
+                <tbody className="bg-gray-50 dark:bg-gray-800">
                   {isLoading ? (
                     [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
                   ) : currentAssignments.length > 0 ? (
                     currentAssignments.map((assignment, index) => (
                       <tr
                         key={assignment.id}
-                        className={`border-b border-gray-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors duration-200 ${
-                          index % 2 === 0 ? "bg-gray-50/30 dark:bg-gray-750/30" : "bg-white dark:bg-gray-800"
-                        }`}
+                        className="border-b border-gray-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors duration-200"
                       >
                         <td className="p-6">
                           <div>
@@ -810,7 +808,7 @@ const TripAssignPortal = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleDeleteAssignment(assignment.id)}
+                            onClick={() => handleDeleteAssignment(assignment)}
                             className="border-2 border-red-200 hover:border-red-400 dark:border-red-800/50 dark:hover:border-red-600 text-red-600 hover:text-white hover:bg-red-600 dark:text-red-400 dark:hover:text-white transition-all duration-300 rounded-lg shadow-sm hover:shadow-md"
                             disabled={isLoading}
                             data-testid={`delete-assignment-${assignment.id}`}
@@ -853,7 +851,7 @@ const TripAssignPortal = () => {
                 size="sm"
                 onClick={goToFirstPage}
                 disabled={currentPage === 1}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-700 transition-all duration-300 rounded-lg"
               >
                 <ChevronsLeft className="h-4 w-4" />
               </Button>
@@ -863,7 +861,7 @@ const TripAssignPortal = () => {
                 size="sm"
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-700 transition-all duration-300 rounded-lg"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -880,7 +878,7 @@ const TripAssignPortal = () => {
                         onClick={() => goToPage(pageNum)}
                         className={currentPage === pageNum ? 
                           "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md rounded-lg" : 
-                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-gray-50 dark:bg-gray-700 transition-all duration-300 rounded-lg"
                         }
                       >
                         {pageNum}
@@ -905,7 +903,7 @@ const TripAssignPortal = () => {
                         onClick={() => goToPage(pageNum)}
                         className={currentPage === pageNum ? 
                           "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md rounded-lg" : 
-                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-gray-50 dark:bg-gray-700 transition-all duration-300 rounded-lg"
                         }
                       >
                         {pageNum}
@@ -920,7 +918,7 @@ const TripAssignPortal = () => {
                 size="sm"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-700 transition-all duration-300 rounded-lg"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -930,7 +928,7 @@ const TripAssignPortal = () => {
                 size="sm"
                 onClick={goToLastPage}
                 disabled={currentPage === totalPages}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-700 transition-all duration-300 rounded-lg"
               >
                 <ChevronsRight className="h-4 w-4" />
               </Button>

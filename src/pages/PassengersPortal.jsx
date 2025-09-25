@@ -4,27 +4,25 @@ import {
   Search,
   RefreshCw,
   Download,
-  MoreVertical,
-  Users,
-  Bus,
-  MapPin,
   Phone,
   Calendar,
   Clock,
+  Users,
+  MoreVertical,
   AlertCircle,
-  LogOut,
-  X,
-  ChevronsLeft,
   ChevronLeft,
   ChevronRight,
-  ChevronsRight
+  ChevronsLeft,
+  ChevronsRight,
+  X,
+  LogOut
 } from 'lucide-react';
 import { Button } from '../components/ui/button.jsx';
 import { Input } from '../components/ui/input.jsx';
 import { Card, CardContent } from '../components/ui/card.jsx';
 import { Badge } from '../components/ui/badge.jsx';
 
-// Authentication Error Component
+// Authentication Error Component  
 const AuthenticationError = ({ onRetryLogin }) => (
   <div className="flex flex-col items-center justify-center py-16 px-4">
     <div className="bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-2xl p-8 max-w-md text-center shadow-xl">
@@ -45,28 +43,25 @@ const AuthenticationError = ({ onRetryLogin }) => (
   </div>
 );
 
-// Loading Skeleton Row Component
+// Loading Skeleton Component
 const SkeletonRow = () => (
   <tr className="border-b border-purple-500/20 animate-pulse">
     <td className="p-6">
       <div className="space-y-2">
         <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-32"></div>
         <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-24"></div>
-        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-16"></div>
-      </div>
-    </td>
-    <td className="p-6">
-      <div className="space-y-2">
-        <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-24"></div>
-        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-20"></div>
-        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-18"></div>
       </div>
     </td>
     <td className="p-6">
       <div className="space-y-2">
         <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-28"></div>
-        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-24"></div>
         <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-20"></div>
+      </div>
+    </td>
+    <td className="p-6">
+      <div className="space-y-2">
+        <div className="h-4 bg-purple-200/30 dark:bg-purple-800/30 rounded w-32"></div>
+        <div className="h-3 bg-purple-200/20 dark:bg-purple-800/20 rounded w-24"></div>
       </div>
     </td>
     <td className="p-6">
@@ -76,7 +71,7 @@ const SkeletonRow = () => (
       <div className="h-6 bg-purple-200/30 dark:bg-purple-800/30 rounded-full w-20"></div>
     </td>
     <td className="p-6">
-      <div className="h-8 bg-purple-200/30 dark:bg-purple-800/30 rounded w-10"></div>
+      <div className="h-8 bg-purple-200/30 dark:bg-purple-800/30 rounded w-8"></div>
     </td>
   </tr>
 );
@@ -84,24 +79,6 @@ const SkeletonRow = () => (
 // Passenger Details Modal Component
 const PassengerDetailsModal = ({ passenger, isOpen, onClose }) => {
   if (!isOpen || !passenger) return null;
-
-  const getStatusColor = (status) => {
-    if (!status) return "bg-gray-500 text-white";
-    switch (status.toLowerCase()) {
-      case "active":
-        return "bg-green-500 text-white";
-      case "completed":
-        return "bg-blue-500 text-white";
-      case "pending":
-        return "bg-yellow-500 text-white";
-      case "cancelled":
-        return "bg-red-500 text-white";
-      case "confirmed":
-        return "bg-purple-500 text-white";
-      default:
-        return "bg-gray-500 text-white";
-    }
-  };
 
   const getBusTypeColor = (busType) => {
     if (!busType) return "bg-gray-500 text-white";
@@ -118,107 +95,104 @@ const PassengerDetailsModal = ({ passenger, isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-gray-800 backdrop-blur-sm rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border-2 border-purple-200 dark:border-purple-700">
-        <div className="sticky top-0 bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-t-2xl">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Passenger Details</h2>
-            <Button 
-              onClick={onClose}
-              variant="ghost"
-              size="sm"
-              className="text-white hover:bg-white/20 rounded-full p-2"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
+      
+      <div className="relative bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-auto border-2 border-purple-200 dark:border-purple-700">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-purple-200 dark:border-purple-700 bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-800 dark:to-purple-900 rounded-t-2xl">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Passenger Details</h2>
+            <p className="text-purple-100 text-sm">Complete booking information</p>
           </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onClose}
+            className="text-white hover:bg-white/20 rounded-full"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
 
-        <div className="p-8 space-y-8">
-          {/* Personal Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Personal Information
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-750 rounded-xl p-6 space-y-4 border border-purple-200 dark:border-purple-700">
-              <div className="flex justify-between">
+        {/* Content */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-purple-200 dark:border-purple-700 pb-2">
+                Personal Information
+              </h3>
+              <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">Name:</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.passengerName || 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">Phone:</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.phoneNumber || 'N/A'}</span>
               </div>
               {passenger.age && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400 font-medium">Age:</span>
                   <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.age} years</span>
                 </div>
               )}
               {passenger.gender && (
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400 font-medium">Gender:</span>
                   <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.gender}</span>
                 </div>
               )}
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 font-medium">Status:</span>
-                <Badge className={`${getStatusColor(passenger.status || "Confirmed")} font-medium px-3 py-1`}>
-                  {passenger.status || 'Confirmed'}
-                </Badge>
-              </div>
-              {passenger.ticketPrice && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400 font-medium">Ticket Price:</span>
-                  <span className="font-semibold text-green-600 dark:text-green-400 text-lg">
-                    ₹{passenger.ticketPrice}
-                  </span>
-                </div>
-              )}
             </div>
-          </div>
 
-          {/* Journey Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Journey Information
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-750 rounded-xl p-6 space-y-4 border border-purple-200 dark:border-purple-700">
-              <div className="flex justify-between">
+            {/* Booking Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-purple-200 dark:border-purple-700 pb-2">
+                Booking Details
+              </h3>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-400 font-medium">Ticket Number:</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.ticketNumber || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-400 font-medium">PNR:</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.pnr || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-400 font-medium">Seat Number:</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.seatNumber || 'N/A'}</span>
+              </div>
+            </div>
+
+            {/* Journey Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-purple-200 dark:border-purple-700 pb-2">
+                Journey Details
+              </h3>
+              <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">From:</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.boardingPoint || 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">To:</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.droppingPoint || 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1">
-                  <Calendar className="h-4 w-4 text-purple-500" />
-                  Date:
-                </span>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-400 font-medium">Date:</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.date || 'N/A'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-purple-500" />
-                  Time:
-                </span>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 dark:text-gray-400 font-medium">Time:</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.time || 'N/A'}</span>
               </div>
             </div>
-          </div>
 
-          {/* Bus Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-2">
-              <Bus className="h-5 w-5" />
-              Bus Information
-            </h3>
-            <div className="bg-gray-50 dark:bg-gray-750 rounded-xl p-6 space-y-4 border border-purple-200 dark:border-purple-700">
-              <div className="flex justify-between">
+            {/* Service Information */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-purple-200 dark:border-purple-700 pb-2">
+                Service Details
+              </h3>
+              <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400 font-medium">Operator:</span>
                 <span className="font-semibold text-gray-800 dark:text-gray-100">{passenger.operatorName || 'N/A'}</span>
               </div>
@@ -233,7 +207,7 @@ const PassengerDetailsModal = ({ passenger, isOpen, onClose }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 p-6 bg-gray-50 dark:bg-gray-750 rounded-b-2xl border-t border-purple-200 dark:border-purple-700">
+        <div className="flex justify-end gap-3 p-6 bg-gray-100 dark:bg-gray-750 rounded-b-2xl border-t border-purple-200 dark:border-purple-700">
           <Button 
             variant="outline" 
             onClick={onClose}
@@ -569,7 +543,7 @@ ${rows}`;
               placeholder="Search by name, ticket, PNR, phone, or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 bg-white border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-700 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 text-gray-800 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-lg shadow-sm focus:shadow-md py-3"
+              className="pl-12 bg-gray-50 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-800 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 text-gray-800 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 rounded-lg shadow-sm focus:shadow-md py-3"
               data-testid="search-input"
             />
           </div>
@@ -584,7 +558,7 @@ ${rows}`;
                   setSelectedDate('');
                 }
               }}
-              className="bg-white border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-700 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md font-medium"
+              className="bg-gray-50 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-800 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-3 text-sm transition-all duration-300 shadow-sm focus:shadow-md font-medium"
             >
               <option value="all">All Dates</option>
               <option value="specific">Specific Date</option>
@@ -595,7 +569,7 @@ ${rows}`;
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-white border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-700 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 text-gray-800 dark:text-gray-100 rounded-lg shadow-sm focus:shadow-md"
+                className="bg-gray-50 border-2 border-purple-200 hover:border-purple-400 focus:border-purple-500 dark:bg-gray-800 dark:border-purple-600 dark:hover:border-purple-500 dark:focus:border-purple-400 transition-all duration-300 text-gray-800 dark:text-gray-100 rounded-lg shadow-sm focus:shadow-md"
               />
             )}
 
@@ -604,7 +578,7 @@ ${rows}`;
               disabled={refreshing || loading}
               variant="outline"
               size="sm"
-              className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-white dark:bg-gray-700 transition-all duration-300 font-medium px-4 rounded-lg shadow-sm hover:shadow-md"
+              className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-gray-50 dark:bg-gray-800 transition-all duration-300 font-medium px-4 rounded-lg shadow-sm hover:shadow-md"
               data-testid="refresh-button"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
@@ -615,7 +589,7 @@ ${rows}`;
               onClick={exportToCSV}
               variant="outline"
               size="sm"
-              className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-white dark:bg-gray-700 transition-all duration-300 font-medium px-4 rounded-lg shadow-sm hover:shadow-md"
+              className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 text-purple-700 dark:text-purple-300 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-gray-50 dark:bg-gray-800 transition-all duration-300 font-medium px-4 rounded-lg shadow-sm hover:shadow-md"
             >
               <Download className="h-4 w-4 mr-2" />
               Export CSV
@@ -639,30 +613,28 @@ ${rows}`;
         )}
 
         {/* Passengers Table */}
-        <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl animate-in fade-in-up duration-700 transition-all duration-300 hover:shadow-2xl" style={{ animationDelay: '400ms' }}>
+        <Card className="bg-gray-50/80 dark:bg-gray-800/80 border-2 border-purple-200 dark:border-purple-700 rounded-2xl overflow-hidden shadow-xl animate-in fade-in-up duration-700 transition-all duration-300 hover:shadow-2xl" style={{ animationDelay: '400ms' }}>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-750">
-                  <tr className="border-b-2 border-purple-200 dark:border-purple-600">
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Passenger</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Ticket Details</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Journey</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Bus Type</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Status</th>
-                    <th className="text-left p-6 font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wider">Actions</th>
+                <thead className="bg-gradient-to-r from-purple-600 to-purple-700 dark:from-purple-800 dark:to-purple-900">
+                  <tr className="border-b-2 border-purple-300 dark:border-purple-600">
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Passenger</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Ticket Details</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Journey</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Bus Type</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Status</th>
+                    <th className="text-left p-6 font-bold text-white text-sm uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800">
+                <tbody className="bg-gray-50 dark:bg-gray-800">
                   {loading ? (
                     [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
                   ) : currentPassengers.length > 0 ? (
                     currentPassengers.map((passenger, index) => (
                       <tr
                         key={`${passenger.ticketNumber}-${index}`}
-                        className={`border-b border-gray-100 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors duration-200 ${
-                          index % 2 === 0 ? "bg-gray-50/30 dark:bg-gray-750/30" : "bg-white dark:bg-gray-800"
-                        }`}
+                        className="border-b border-gray-200 dark:border-gray-700 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors duration-200"
                         data-testid={`passenger-row-${index}`}
                       >
                         <td className="p-6">
@@ -731,7 +703,7 @@ ${rows}`;
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-white dark:bg-gray-700 transition-all duration-300 text-purple-700 dark:text-purple-300 hover:text-purple-800 rounded-lg shadow-sm hover:shadow-md"
+                            className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-600 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30 bg-gray-50 dark:bg-gray-800 transition-all duration-300 text-purple-700 dark:text-purple-300 hover:text-purple-800 rounded-lg shadow-sm hover:shadow-md"
                             onClick={() => handleViewDetails(passenger)}
                             data-testid={`view-details-${index}`}
                           >
@@ -773,7 +745,7 @@ ${rows}`;
                 size="sm"
                 onClick={goToFirstPage}
                 disabled={currentPage === 1}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-800 transition-all duration-300 rounded-lg"
                 data-testid="pagination-first"
               >
                 <ChevronsLeft className="h-4 w-4" />
@@ -784,7 +756,7 @@ ${rows}`;
                 size="sm"
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-800 transition-all duration-300 rounded-lg"
                 data-testid="pagination-prev"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -802,7 +774,7 @@ ${rows}`;
                         onClick={() => goToPage(pageNum)}
                         className={currentPage === pageNum ? 
                           "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md rounded-lg" : 
-                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-gray-50 dark:bg-gray-800 transition-all duration-300 rounded-lg"
                         }
                         data-testid={`pagination-${pageNum}`}
                       >
@@ -828,7 +800,7 @@ ${rows}`;
                         onClick={() => goToPage(pageNum)}
                         className={currentPage === pageNum ? 
                           "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-md rounded-lg" : 
-                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                          "border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 bg-gray-50 dark:bg-gray-800 transition-all duration-300 rounded-lg"
                         }
                         data-testid={`pagination-${pageNum}`}
                       >
@@ -844,7 +816,7 @@ ${rows}`;
                 size="sm"
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-800 transition-all duration-300 rounded-lg"
                 data-testid="pagination-next"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -855,7 +827,7 @@ ${rows}`;
                 size="sm"
                 onClick={goToLastPage}
                 disabled={currentPage === totalPages}
-                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-700 transition-all duration-300 rounded-lg"
+                className="border-2 border-purple-200 hover:border-purple-400 dark:border-purple-700 dark:hover:border-purple-500 disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50 dark:bg-gray-800 transition-all duration-300 rounded-lg"
                 data-testid="pagination-last"
               >
                 <ChevronsRight className="h-4 w-4" />

@@ -145,7 +145,7 @@ const RegistrationsPortal = () => {
           {registrationTypes.map((type, index) => (
             <Card 
               key={type.id}
-              className="group relative bg-white dark:bg-gray-800 hover:bg-white dark:hover:bg-gray-750 transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 cursor-pointer shadow-lg hover:shadow-xl hover:shadow-purple-500/20 dark:hover:shadow-purple-500/10 rounded-2xl overflow-hidden animate-in fade-in-up"
+              className="group relative bg-gray-50/80 dark:bg-gray-800/80 hover:bg-gray-50 dark:hover:bg-gray-750 transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 cursor-pointer shadow-lg hover:shadow-xl hover:shadow-purple-500/20 dark:hover:shadow-purple-500/10 rounded-2xl overflow-hidden animate-in fade-in-up"
               style={{ animationDelay: `${index * 150}ms` }}
               onClick={() => handleRegistrationClick(type)}
               data-testid={`${type.id}-registration-card`}
@@ -173,9 +173,6 @@ const RegistrationsPortal = () => {
                 
                 {/* Bottom accent line */}
                 <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 group-hover:w-32 h-1 bg-gradient-to-r from-transparent via-purple-500 to-transparent transition-all duration-500 rounded-t-full"></div>
-                
-                {/* Corner decoration */}
-                <div className="absolute top-4 right-4 w-8 h-8 border-2 border-purple-200/50 dark:border-purple-700/50 rounded-full group-hover:border-purple-400/70 dark:group-hover:border-purple-500/70 group-hover:scale-125 transition-all duration-500"></div>
               </CardContent>
             </Card>
           ))}

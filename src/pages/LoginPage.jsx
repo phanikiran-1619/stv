@@ -477,10 +477,10 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-foreground flex items-center justify-center px-4 transition-colors duration-300 relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-blue-500/5"></div>
-      <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl"></div>
-      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-purple-400/5 rounded-full blur-2xl"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-500/3 via-transparent to-blue-500/3"></div>
+      <div className="absolute top-20 left-10 w-32 h-32 bg-purple-500/5 dark:bg-purple-500/3 rounded-full blur-xl"></div>
+      <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-500/5 dark:bg-blue-500/3 rounded-full blur-xl"></div>
+      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-purple-400/3 dark:bg-purple-400/2 rounded-full blur-lg"></div>
       
       <Toaster 
         toastOptions={{
@@ -524,14 +524,14 @@ const LoginPage = () => {
       <div className="w-full max-w-lg flex items-center justify-center relative z-10">
         <div className="relative w-full">
           {/* Enhanced Decorative Background Glow */}
-          <div className="absolute -inset-6 bg-gradient-to-r from-purple-500/10 via-purple-600/20 to-purple-500/10 rounded-3xl blur-2xl"></div>
-          <div className="absolute -inset-3 bg-gradient-to-r from-blue-500/5 via-purple-600/10 to-pink-500/5 rounded-3xl blur-xl"></div>
+          <div className="absolute -inset-4 bg-gradient-to-r from-purple-500/5 via-purple-600/8 dark:via-purple-600/4 to-purple-500/5 rounded-3xl blur-lg"></div>
+          <div className="absolute -inset-2 bg-gradient-to-r from-blue-500/3 via-purple-600/5 dark:via-purple-600/3 to-pink-500/3 rounded-3xl blur-md"></div>
           
           <Card className="relative bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-purple-200/70 dark:border-purple-700/70 shadow-2xl w-full 
                          hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-700 
                          before:absolute before:inset-0 before:rounded-3xl before:bg-gradient-to-br before:from-purple-500/5 before:to-blue-500/5 before:pointer-events-none
                          transform hover:scale-[1.02] rounded-3xl">
-            <CardHeader className="text-center pb-8 pt-10 relative z-10">
+            <CardHeader className="text-center pb-6 pt-8 relative z-10">
               <div className="flex justify-center mb-8">
                 <div className="relative">
                   <div className="w-20 h-20 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 rounded-3xl flex items-center justify-center shadow-2xl shadow-purple-500/25 rotate-3 hover:rotate-6 transition-transform duration-500">
@@ -558,24 +558,11 @@ const LoginPage = () => {
                   ? 'Please enter the 6-digit code we sent to your phone for secure access'
                   : 'Access your dashboard with secure authentication'}
               </p>
-
-              {!showForgotPasswordOtpForm && !showForgotPasswordForm && !showOtpForm && (
-                <div className="flex items-center justify-center gap-6 mt-6">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Shield className="w-4 h-4 text-purple-500" />
-                    <span>Bank-level Security</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                    <span>SSL Encrypted</span>
-                  </div>
-                </div>
-              )}
             </CardHeader>
 
-            <CardContent className="space-y-8 px-10 pb-10 relative z-10">
+            <CardContent className="space-y-6 px-8 pb-8 relative z-10">
               {showForgotPasswordOtpForm ? (
-                <form onSubmit={handleForgotPasswordSubmit} className="space-y-8">
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-6">
                   {/* OTP Input Fields */}
                   <div className="space-y-4">
                     <Label className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
@@ -594,8 +581,8 @@ const LoginPage = () => {
                           ref={(el) => {
                             forgotPasswordOtpInputs.current[index] = el;
                           }}
-                          className={`w-16 h-16 text-center text-2xl font-bold bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg ${
-                            digit ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 shadow-xl scale-105' : 'hover:border-purple-300 dark:hover:border-purple-600'
+                          className={`w-10 h-5 text-center text-xl font-bold bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-md ${
+                            digit ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 shadow-lg scale-105' : 'hover:border-purple-300 dark:hover:border-purple-600'
                           }`}
                           autoComplete="off"
                         />
@@ -617,7 +604,7 @@ const LoginPage = () => {
                         required
                         value={forgotPasswordData.newPassword}
                         onChange={handleForgotPasswordInputChange}
-                        className="pl-16 pr-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
+                        className="pl-16 pr-16 h-12 text-base bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-md hover:shadow-lg"
                         placeholder="Enter your new secure password"
                       />
                       <button
@@ -635,7 +622,7 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
+                    className="w-full h-12 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-lg font-bold transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-xl dark:hover:shadow-purple-500/20"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-3">
@@ -674,7 +661,7 @@ const LoginPage = () => {
                   </div>
                 </form>
               ) : showForgotPasswordForm ? (
-                <form onSubmit={handleForgotPasswordRequestOtp} className="space-y-8">
+                <form onSubmit={handleForgotPasswordRequestOtp} className="space-y-6">
                   {/* Username Field */}
                   <div className="space-y-3">
                     <Label htmlFor="forgot-username" className="text-lg font-semibold text-gray-700 dark:text-gray-200">
@@ -689,7 +676,7 @@ const LoginPage = () => {
                         required
                         value={forgotPasswordData.username}
                         onChange={handleForgotPasswordInputChange}
-                        className="pl-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
+                        className="pl-16 h-12 text-base bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-md hover:shadow-lg"
                         placeholder="Enter your username or email"
                       />
                     </div>
@@ -699,7 +686,7 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
+                    className="w-full h-12 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-lg font-bold transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-xl dark:hover:shadow-purple-500/20"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-3">
@@ -723,7 +710,7 @@ const LoginPage = () => {
                   </div>
                 </form>
               ) : showOtpForm ? (
-                <form onSubmit={handleOtpSubmit} className="space-y-8">
+                <form onSubmit={handleOtpSubmit} className="space-y-6">
                   {/* OTP Input Fields */}
                   <div className="space-y-4">
                     <Label className="text-lg font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2">
@@ -742,8 +729,8 @@ const LoginPage = () => {
                           ref={(el) => {
                             otpInputs.current[index] = el;
                           }}
-                          className={`w-16 h-16 text-center text-2xl font-bold bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg ${
-                            digit ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 shadow-xl scale-105' : 'hover:border-purple-300 dark:hover:border-purple-600'
+                          className={`w-12 h-12 text-center text-xl font-bold bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-md ${
+                            digit ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30 shadow-lg scale-105' : 'hover:border-purple-300 dark:hover:border-purple-600'
                           }`}
                           autoComplete="off"
                         />
@@ -755,7 +742,7 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
+                    className="w-full h-12 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-lg font-bold transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-xl dark:hover:shadow-purple-500/20"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-3">
@@ -784,7 +771,7 @@ const LoginPage = () => {
                   </div>
                 </form>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-8">
+                <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Username Field */}
                   <div className="space-y-3">
                     <Label htmlFor="username" className="text-lg font-semibold text-gray-700 dark:text-gray-200">Username</Label>
@@ -797,7 +784,7 @@ const LoginPage = () => {
                         required
                         value={formData.username}
                         onChange={handleInputChange}
-                        className="pl-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
+                        className="pl-16 h-12 text-base bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-md hover:shadow-lg"
                         placeholder="Enter your username"
                       />
                     </div>
@@ -815,7 +802,7 @@ const LoginPage = () => {
                         required
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="pl-16 pr-16 h-16 text-lg bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-lg hover:shadow-xl"
+                        className="pl-16 pr-16 h-12 text-base bg-white dark:bg-gray-700 border-2 border-purple-200 dark:border-purple-700 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all duration-300 rounded-2xl shadow-md hover:shadow-lg"
                         placeholder="Enter your password"
                       />
                       <button
@@ -843,7 +830,7 @@ const LoginPage = () => {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full h-16 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-xl font-bold transition-all duration-500 transform hover:scale-105 shadow-xl hover:shadow-2xl hover:shadow-purple-500/30"
+                    className="w-full h-12 bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white rounded-2xl text-lg font-bold transition-all duration-500 transform hover:scale-105 shadow-lg hover:shadow-xl dark:hover:shadow-purple-500/20"
                     data-testid="login-submit-button"
                   >
                     {isLoading ? (
