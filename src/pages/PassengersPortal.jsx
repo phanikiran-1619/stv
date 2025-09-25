@@ -69,20 +69,6 @@ const SkeletonRow = () => (
   </tr>
 );
 
-const SkeletonStats = () => (
-  <Card className="bg-card/60 backdrop-blur-sm border-2 border-purple-200/30 dark:border-purple-800/30 animate-pulse">
-    <CardContent className="p-4 sm:p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="h-4 bg-muted-foreground/20 rounded w-24 mb-2"></div>
-          <div className="h-8 bg-muted-foreground/20 rounded w-16"></div>
-        </div>
-        <div className="h-8 w-8 bg-muted-foreground/20 rounded"></div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
 // Authentication Error Component
 const AuthenticationError = ({ onRetryLogin }) => (
   <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -274,7 +260,7 @@ const PassengerDetailsModal = ({ passenger, isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Action Buttons - Removed Edit Button */}
           <div className="flex justify-end gap-2 mt-6 pt-6 border-t border-border/30">
             <Button 
               variant="outline" 
@@ -282,10 +268,6 @@ const PassengerDetailsModal = ({ passenger, isOpen, onClose }) => {
               className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60"
             >
               Close
-            </Button>
-            <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Details
             </Button>
           </div>
         </div>
@@ -316,7 +298,7 @@ const PassengersPortal = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   
-  // Stats
+  // Stats - kept for functionality but not displayed
   const [stats, setStats] = useState({
     totalPassengers: 0,
     activeBookings: 0,
@@ -329,7 +311,7 @@ const PassengersPortal = () => {
   
   // Check and get token from localStorage
   const getToken = useCallback(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('operatortoken');
     if (!token) {
       setAuthError(true);
       return null;
@@ -339,13 +321,13 @@ const PassengersPortal = () => {
 
   // Handle authentication error
   const handleAuthError = useCallback(() => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('operatortoken');
     setAuthError(true);
   }, []);
 
   // Retry login
   const handleRetryLogin = useCallback(() => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('operatortoken');
     navigate('/login');
   }, [navigate]);
 
@@ -564,36 +546,32 @@ ${rows}`;
     }
   };
 
-  const statsConfig = [
-    { 
-      label: 'Total Passengers', 
-      value: stats.totalPassengers?.toLocaleString() || '0', 
-      icon: Users, 
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-100 dark:bg-purple-950'
-    },
-    { 
-      label: 'Active Bookings', 
-      value: stats.activeBookings?.toLocaleString() || '0', 
-      icon: Ticket, 
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-100 dark:bg-green-950'
-    },
-    { 
-      label: 'Completed Trips', 
-      value: stats.completedTrips?.toLocaleString() || '0', 
-      icon: MapPin, 
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-100 dark:bg-blue-950'
-    },
-    { 
-      label: 'This Month', 
-      value: stats.thisMonth?.toLocaleString() || '0', 
-      icon: Clock, 
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-100 dark:bg-orange-950'
+  // Generate pagination numbers with proper logic
+  const getPaginationNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
     }
-  ];
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots.filter((item, index, arr) => arr.indexOf(item) === index);
+  };
 
   // Show authentication error if not logged in
   if (authError) {
@@ -602,7 +580,7 @@ ${rows}`;
 
   return (
     <div className="animate-in fade-in-up duration-700">
-      {/* Header */}
+      {/* Header - Keep Only Passenger Management Title */}
       <div className="text-center mb-8 sm:mb-12">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
           <span className="bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
@@ -614,39 +592,16 @@ ${rows}`;
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 animate-in fade-in-up duration-700" style={{ animationDelay: '200ms' }}>
-        {loading ? (
-          [...Array(4)].map((_, i) => <SkeletonStats key={i} />)
-        ) : (
-          statsConfig.map((stat, index) => (
-            <Card key={index} className="group bg-card/60 backdrop-blur-sm border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 hover:bg-card/80 transition-all duration-300 hover:scale-105 shadow-sm hover:shadow-md hover:shadow-purple-500/10" data-testid={`stat-card-${index}`}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">{stat.label}</p>
-                    <p className="text-2xl sm:text-3xl font-bold text-foreground">{stat.value}</p>
-                  </div>
-                  <div className={`p-2 rounded-lg ${stat.bgColor} group-hover:scale-110 transition-transform duration-300`}>
-                    <stat.icon className={`h-6 w-6 sm:h-8 sm:w-8 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
-
-      {/* Controls Bar */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6 animate-in fade-in-up duration-700" style={{ animationDelay: '400ms' }}>
-        {/* Search */}
+      {/* Controls Bar - Enhanced for better visibility */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6 animate-in fade-in-up duration-700" style={{ animationDelay: '200ms' }}>
+        {/* Search - Enhanced for better light mode visibility */}
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name, ticket, PNR, phone, or location..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-card/60 backdrop-blur-sm border-2 border-purple-200/30 focus:border-purple-400/60 dark:border-purple-800/30 dark:focus:border-purple-600/60 focus:bg-card/80 transition-all duration-300"
+            className="pl-10 bg-background border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:bg-card/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300 text-foreground placeholder:text-muted-foreground"
             data-testid="search-input"
           />
         </div>
@@ -661,7 +616,7 @@ ${rows}`;
                 setSelectedDate('');
               }
             }}
-            className="bg-card/60 backdrop-blur-sm border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
+            className="bg-background border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:bg-card/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
           >
             <option value="all">All Dates</option>
             <option value="specific">Specific Date</option>
@@ -672,7 +627,7 @@ ${rows}`;
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-card/60 backdrop-blur-sm border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 transition-all duration-300"
+              className="bg-background border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:bg-card/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300"
             />
           )}
 
@@ -681,7 +636,7 @@ ${rows}`;
             disabled={refreshing || loading}
             variant="outline"
             size="sm"
-            className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 text-muted-foreground hover:text-foreground hover:bg-purple-50/50 dark:hover:bg-purple-950/30 bg-card/60 backdrop-blur-sm transition-all duration-300"
+            className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 text-foreground hover:text-foreground hover:bg-accent dark:hover:bg-purple-950/30 bg-background dark:bg-card/60 transition-all duration-300"
             data-testid="refresh-button"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
@@ -692,7 +647,7 @@ ${rows}`;
             onClick={exportToCSV}
             variant="outline"
             size="sm"
-            className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 text-muted-foreground hover:text-foreground hover:bg-purple-50/50 dark:hover:bg-purple-950/30 bg-card/60 backdrop-blur-sm transition-all duration-300"
+            className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 text-foreground hover:text-foreground hover:bg-accent dark:hover:bg-purple-950/30 bg-background dark:bg-card/60 transition-all duration-300"
           >
             <Download className="h-4 w-4 mr-2" />
             Export
@@ -715,36 +670,36 @@ ${rows}`;
         </div>
       )}
 
-      {/* Passengers Table */}
-      <Card className="bg-card/60 backdrop-blur-sm border-2 border-purple-200/30 dark:border-purple-800/30 rounded-xl overflow-hidden animate-in fade-in-up duration-700" style={{ animationDelay: '600ms' }}>
+      {/* Enhanced Passengers Table */}
+      <Card className="bg-background dark:bg-card/60 border-2 border-border dark:border-purple-800/30 rounded-xl overflow-hidden shadow-lg dark:shadow-purple-500/5 animate-in fade-in-up duration-700" style={{ animationDelay: '400ms' }}>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-purple-500/30">
-                  <th className="text-left p-4 font-semibold text-foreground">Passenger</th>
-                  <th className="text-left p-4 font-semibold text-foreground">Ticket Details</th>
-                  <th className="text-left p-4 font-semibold text-foreground">Journey</th>
-                  <th className="text-left p-4 font-semibold text-foreground">Bus Type</th>
-                  <th className="text-left p-4 font-semibold text-foreground">Status</th>
-                  <th className="text-left p-4 font-semibold text-foreground">Actions</th>
+              <thead className="bg-muted/50 dark:bg-purple-950/20">
+                <tr className="border-b-2 border-border dark:border-purple-500/30">
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Passenger</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Ticket Details</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Journey</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Bus Type</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Status</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-background dark:bg-transparent">
                 {loading ? (
                   [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
                 ) : currentPassengers.length > 0 ? (
                   currentPassengers.map((passenger, index) => (
                     <tr
                       key={`${passenger.ticketNumber}-${index}`}
-                      className={`border-b border-purple-500/20 hover:bg-purple-50/50 dark:hover:bg-purple-950/30 transition-colors ${
-                        index % 2 === 0 ? "bg-card/20" : "bg-transparent"
+                      className={`border-b border-border dark:border-purple-500/20 hover:bg-muted/30 dark:hover:bg-purple-950/30 transition-colors duration-200 ${
+                        index % 2 === 0 ? "bg-card/20 dark:bg-card/10" : "bg-transparent"
                       }`}
                       data-testid={`passenger-row-${index}`}
                     >
                       <td className="p-4">
                         <div>
-                          <div className="font-medium text-foreground">{passenger.passengerName || "N/A"}</div>
+                          <div className="font-medium text-foreground text-base">{passenger.passengerName || "N/A"}</div>
                           <div className="text-sm text-muted-foreground">{passenger.phoneNumber || "N/A"}</div>
                           {passenger.age && passenger.gender && (
                             <div className="text-xs text-muted-foreground">
@@ -756,41 +711,41 @@ ${rows}`;
                       <td className="p-4">
                         <div className="space-y-1">
                           <div className="text-foreground">
-                            <span className="text-muted-foreground">Ticket: </span>
-                            {passenger.ticketNumber || "N/A"}
+                            <span className="text-muted-foreground font-medium">Ticket: </span>
+                            <span className="font-medium">{passenger.ticketNumber || "N/A"}</span>
                           </div>
                           <div className="text-foreground">
-                            <span className="text-muted-foreground">PNR: </span>
-                            {passenger.pnr || "N/A"}
+                            <span className="text-muted-foreground font-medium">PNR: </span>
+                            <span className="font-medium">{passenger.pnr || "N/A"}</span>
                           </div>
                           <div className="text-foreground">
-                            <span className="text-muted-foreground">Seat: </span>
-                            {passenger.seatNumber || "N/A"}
+                            <span className="text-muted-foreground font-medium">Seat: </span>
+                            <span className="font-medium">{passenger.seatNumber || "N/A"}</span>
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
                         <div className="space-y-1">
                           <div className="text-foreground">
-                            <span className="text-muted-foreground">From: </span>
-                            {passenger.boardingPoint || "N/A"}
+                            <span className="text-muted-foreground font-medium">From: </span>
+                            <span className="font-medium">{passenger.boardingPoint || "N/A"}</span>
                           </div>
                           <div className="text-foreground">
-                            <span className="text-muted-foreground">To: </span>
-                            {passenger.droppingPoint || "N/A"}
+                            <span className="text-muted-foreground font-medium">To: </span>
+                            <span className="font-medium">{passenger.droppingPoint || "N/A"}</span>
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {passenger.date || "N/A"} • {passenger.time || "N/A"}
+                            <span className="font-medium">{passenger.date || "N/A"}</span> • <span className="font-medium">{passenger.time || "N/A"}</span>
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
-                        <Badge className={`${getBusTypeColor(passenger.busType)}`}>
+                        <Badge className={`${getBusTypeColor(passenger.busType)} font-medium`}>
                           {passenger.busType || "N/A"}
                         </Badge>
                       </td>
                       <td className="p-4">
-                        <Badge className={`${getStatusColor(passenger.status || "Confirmed")}`}>
+                        <Badge className={`${getStatusColor(passenger.status || "Confirmed")} font-medium`}>
                           {passenger.status || "Confirmed"}
                         </Badge>
                       </td>
@@ -798,7 +753,7 @@ ${rows}`;
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 hover:bg-purple-50/50 dark:hover:bg-purple-950/30 bg-card/60 backdrop-blur-sm transition-all duration-300"
+                          className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 hover:bg-accent dark:hover:bg-purple-950/30 bg-background dark:bg-card/60 transition-all duration-300"
                           onClick={() => handleViewDetails(passenger)}
                           data-testid={`view-details-${index}`}
                         >
@@ -827,7 +782,7 @@ ${rows}`;
         </CardContent>
       </Card>
 
-      {/* Pagination */}
+      {/* Fixed Pagination */}
       {!loading && !error && totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-border/30">
           <div className="text-sm text-muted-foreground">
@@ -840,7 +795,7 @@ ${rows}`;
               size="sm"
               onClick={goToFirstPage}
               disabled={currentPage === 1}
-              className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-card/60 backdrop-blur-sm transition-all duration-300"
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
               data-testid="pagination-first"
             >
               <ChevronsLeft className="h-4 w-4" />
@@ -851,33 +806,61 @@ ${rows}`;
               size="sm"
               onClick={goToPreviousPage}
               disabled={currentPage === 1}
-              className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-card/60 backdrop-blur-sm transition-all duration-300"
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
               data-testid="pagination-prev"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
             <div className="flex items-center gap-1">
-              {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                const pageNum = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i));
-                if (pageNum > totalPages || pageNum < 1) return null;
-                
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => goToPage(pageNum)}
-                    className={currentPage === pageNum ? 
-                      "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-sm" : 
-                      "border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 bg-card/60 backdrop-blur-sm transition-all duration-300"
-                    }
-                    data-testid={`pagination-${pageNum}`}
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
+              {totalPages <= 7 ? (
+                // Show all page numbers if total pages <= 7
+                [...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum)}
+                      className={currentPage === pageNum ? 
+                        "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-sm" : 
+                        "border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 bg-background dark:bg-card/60 transition-all duration-300"
+                      }
+                      data-testid={`pagination-${pageNum}`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })
+              ) : (
+                // Show pagination with dots for more than 7 pages
+                getPaginationNumbers().map((pageNum, index) => {
+                  if (pageNum === '...') {
+                    return (
+                      <span key={`dots-${index}`} className="px-2 py-1 text-muted-foreground">
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum)}
+                      className={currentPage === pageNum ? 
+                        "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-sm" : 
+                        "border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 bg-background dark:bg-card/60 transition-all duration-300"
+                      }
+                      data-testid={`pagination-${pageNum}`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })
+              )}
             </div>
             
             <Button
@@ -885,7 +868,7 @@ ${rows}`;
               size="sm"
               onClick={goToNextPage}
               disabled={currentPage === totalPages}
-              className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-card/60 backdrop-blur-sm transition-all duration-300"
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
               data-testid="pagination-next"
             >
               <ChevronRight className="h-4 w-4" />
@@ -896,7 +879,7 @@ ${rows}`;
               size="sm"
               onClick={goToLastPage}
               disabled={currentPage === totalPages}
-              className="border-2 border-purple-200/30 hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-card/60 backdrop-blur-sm transition-all duration-300"
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
               data-testid="pagination-last"
             >
               <ChevronsRight className="h-4 w-4" />

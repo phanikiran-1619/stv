@@ -1,135 +1,589 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  User, 
-  Bus, 
-  Route,
-  Plus,
-  Edit,
+  Search, 
+  Bus,
+  MapPin,
+  User,
+  Users,
+  Calendar,
+  Clock,
   Trash2,
   CheckCircle,
   AlertCircle,
-  Navigation
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  LogOut
 } from 'lucide-react';
 import { Button } from '../components/ui/button.jsx';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx';
+import { Input } from '../components/ui/input.jsx';
+import { Card, CardContent } from '../components/ui/card.jsx';
 import { Badge } from '../components/ui/badge.jsx';
 
+// Authentication Error Component
+const AuthenticationError = ({ onRetryLogin }) => (
+  <div className="flex flex-col items-center justify-center py-16 px-4">
+    <div className="bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-2xl p-8 max-w-md text-center">
+      <LogOut className="h-16 w-16 text-red-500 mx-auto mb-4" />
+      <h3 className="text-xl font-bold text-red-800 dark:text-red-200 mb-2">
+        Authentication Required
+      </h3>
+      <p className="text-red-600 dark:text-red-300 mb-6">
+        You need to login again to access trip assignment data. Your session may have expired.
+      </p>
+      <Button 
+        onClick={onRetryLogin}
+        className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-sm"
+      >
+        Login Again
+      </Button>
+    </div>
+  </div>
+);
+
+// Success Message Component
+const SuccessMessage = ({ message, onClose }) => (
+  <div className="fixed top-4 right-4 z-50">
+    <div className="bg-green-500/90 dark:bg-green-600/90 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 animate-in slide-in-from-right duration-300">
+      <CheckCircle className="w-5 h-5" />
+      <span>{message}</span>
+      <button onClick={onClose} className="ml-2 text-white/80 hover:text-white">
+        ×
+      </button>
+    </div>
+  </div>
+);
+
+// Loading Skeleton Component
+const SkeletonRow = () => (
+  <tr className="border-b border-purple-500/20 animate-pulse">
+    <td className="p-4">
+      <div className="space-y-2">
+        <div className="h-4 bg-muted-foreground/20 rounded w-32"></div>
+        <div className="h-3 bg-muted-foreground/20 rounded w-24"></div>
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-muted-foreground/20 rounded w-24"></div>
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-muted-foreground/20 rounded w-28"></div>
+    </td>
+    <td className="p-4">
+      <div className="h-4 bg-muted-foreground/20 rounded w-32"></div>
+    </td>
+    <td className="p-4">
+      <div className="h-6 bg-muted-foreground/20 rounded-full w-16"></div>
+    </td>
+    <td className="p-4">
+      <div className="space-y-1">
+        <div className="h-3 bg-muted-foreground/20 rounded w-20"></div>
+        <div className="h-3 bg-muted-foreground/20 rounded w-16"></div>
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="space-y-2">
+        <div className="h-4 bg-muted-foreground/20 rounded w-24"></div>
+        <div className="h-3 bg-muted-foreground/20 rounded w-20"></div>
+      </div>
+    </td>
+    <td className="p-4">
+      <div className="h-8 bg-muted-foreground/20 rounded w-8"></div>
+    </td>
+  </tr>
+);
+
 const TripAssignPortal = () => {
-  const [activeView, setActiveView] = useState('assignments');
+  const navigate = useNavigate();
+  
+  // State Management
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Form States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRoute, setSelectedRoute] = useState('');
+  const [selectedDriver, setSelectedDriver] = useState('');
+  const [selectedBus, setSelectedBus] = useState('');
+  const [selectedAttender, setSelectedAttender] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedTime, setSelectedTime] = useState('12:00');
+  
+  // Data States
+  const [routes, setRoutes] = useState([]);
+  const [buses, setBuses] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [attenders, setAttenders] = useState([]);
+  const [assignments, setAssignments] = useState([]);
+  
+  // Filtered Available Resources
+  const [availableDrivers, setAvailableDrivers] = useState([]);
+  const [availableBuses, setAvailableBuses] = useState([]);
+  const [availableAttenders, setAvailableAttenders] = useState([]);
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
 
-  const mockTrips = [
-    {
-      id: 1,
-      routeName: 'City Center → Airport',
-      busNumber: 'BUS-001',
-      driverName: 'John Driver',
-      attendant: 'Mike Assistant',
-      departureTime: '08:30 AM',
-      arrivalTime: '09:15 AM',
-      date: '2025-01-15',
-      status: 'scheduled',
-      passengers: 42,
-      capacity: 50
-    },
-    {
-      id: 2,
-      routeName: 'North District → South Plaza',
-      busNumber: 'BUS-002',
-      driverName: 'Jane Smith',
-      attendant: 'Sarah Helper',
-      departureTime: '10:15 AM',
-      arrivalTime: '10:50 AM',
-      date: '2025-01-15',
-      status: 'in_progress',
-      passengers: 38,
-      capacity: 45
-    },
-    {
-      id: 3,
-      routeName: 'Downtown → University',
-      busNumber: 'BUS-003',
-      driverName: 'Bob Wilson',
-      attendant: 'Tom Support',
-      departureTime: '02:45 PM',
-      arrivalTime: '03:20 PM',
-      date: '2025-01-15',
-      status: 'completed',
-      passengers: 35,
-      capacity: 40
-    },
-    {
-      id: 4,
-      routeName: 'Airport → City Center',
-      busNumber: 'BUS-004',
-      driverName: 'Alice Brown',
-      attendant: 'Lisa Care',
-      departureTime: '06:20 PM',
-      arrivalTime: '07:05 PM',
-      date: '2025-01-15',
-      status: 'delayed',
-      passengers: 28,
-      capacity: 50
+  // API Configuration
+  const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_BASE_URL1;
+  
+  // Get minimum date (today)
+  const today = new Date().toISOString().split('T')[0];
+
+  // Authentication functions
+  const getToken = useCallback(() => {
+    const token = localStorage.getItem('operatortoken');
+    if (!token) {
+      setAuthError(true);
+      return null;
     }
-  ];
+    return token;
+  }, []);
 
-  const availableResources = {
-    drivers: [
-      { id: 1, name: 'John Driver', status: 'available', experience: '5 years' },
-      { id: 2, name: 'Jane Smith', status: 'assigned', experience: '3 years' },
-      { id: 3, name: 'Bob Wilson', status: 'on_break', experience: '7 years' },
-      { id: 4, name: 'Alice Brown', status: 'assigned', experience: '4 years' }
-    ],
-    buses: [
-      { id: 1, number: 'BUS-001', status: 'assigned', capacity: 50, condition: 'excellent' },
-      { id: 2, number: 'BUS-002', status: 'assigned', capacity: 45, condition: 'good' },
-      { id: 3, number: 'BUS-003', status: 'maintenance', capacity: 40, condition: 'fair' },
-      { id: 4, number: 'BUS-004', status: 'assigned', capacity: 50, condition: 'excellent' }
-    ],
-    routes: [
-      { id: 1, name: 'City Center → Airport', distance: '25 km', duration: '45 min' },
-      { id: 2, name: 'North District → South Plaza', distance: '18 km', duration: '35 min' },
-      { id: 3, name: 'Downtown → University', distance: '12 km', duration: '30 min' },
-      { id: 4, name: 'Airport → City Center', distance: '25 km', duration: '45 min' }
-    ]
+  const handleAuthError = useCallback(() => {
+    localStorage.removeItem('operatortoken');
+    setAuthError(true);
+  }, []);
+
+  const handleRetryLogin = useCallback(() => {
+    localStorage.removeItem('operatortoken');
+    navigate('/login');
+  }, [navigate]);
+
+  // Show success message
+  const showSuccess = (message) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(''), 3000);
   };
 
+  // Fetch all dropdown data
+  const fetchDropdownData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+
+      const [routesRes, busesRes, driversRes, attendersRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/routes`, { headers }),
+        fetch(`${API_BASE_URL}/api/buses`, { headers }),
+        fetch(`${API_BASE_URL}/api/drivers`, { headers }),
+        fetch(`${API_BASE_URL}/api/attenders`, { headers }),
+      ]);
+
+      // Check for authentication errors
+      if (routesRes.status === 401 || routesRes.status === 403) {
+        handleAuthError();
+        return;
+      }
+
+      if (!routesRes.ok || !busesRes.ok || !driversRes.ok || !attendersRes.ok) {
+        throw new Error('Failed to fetch dropdown data');
+      }
+
+      const [routesData, busesData, driversData, attendersData] = await Promise.all([
+        routesRes.json(),
+        busesRes.json(),
+        driversRes.json(),
+        attendersRes.json(),
+      ]);
+
+      setRoutes(routesData || []);
+      setBuses(busesData || []);
+      setDrivers(driversData || []);
+      setAttenders(attendersData || []);
+
+    } catch (error) {
+      console.error('Error fetching dropdown data:', error);
+      setError('Failed to load dropdown data. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [API_BASE_URL, getToken, handleAuthError]);
+
+  // Fetch assignments
+  const fetchAssignments = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/assignments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch assignments');
+      }
+
+      const data = await response.json();
+
+      // Format assignments with additional data
+      const formattedAssignments = await Promise.all(
+        data.map(async (assignment) => {
+          const token = getToken();
+          if (!token) return assignment;
+
+          try {
+            // Fetch additional data for each assignment
+            const [busRes, attenderRes, driverRes] = await Promise.all([
+              fetch(`${API_BASE_URL}/api/buses/${assignment.busId}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+              }),
+              fetch(`${API_BASE_URL}/api/attenders/${assignment.attenderId}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+              }),
+              fetch(`${API_BASE_URL}/api/drivers/${assignment.driverId}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+              }),
+            ]);
+
+            const [busData, attenderData, driverData] = await Promise.all([
+              busRes.ok ? busRes.json() : {},
+              attenderRes.ok ? attenderRes.json() : {},
+              driverRes.ok ? driverRes.json() : {},
+            ]);
+
+            return {
+              id: assignment.id,
+              driverId: assignment.driverId,
+              busId: assignment.busId,
+              routeId: assignment.routeId,
+              attenderId: assignment.attenderId,
+              driverName: assignment.driverName || driverData.userName || 'Unknown Driver',
+              busNumber: assignment.busNumber || busData.busNumber || 'Unknown Bus',
+              busModel: assignment.busModel || busData.busModel || 'Unknown Model',
+              routeName: assignment.routeName || 'Unknown Route',
+              status: assignment.status || 'Unassigned',
+              driverNumber: assignment.driverNumber || driverData.contactNumber || 'N/A',
+              bookingDate: assignment.bookingDate || 'N/A',
+              time: assignment.time || '00:00:00',
+              attenderName: assignment.attenderName || attenderData.username || 'No Attender',
+              attenderNumber: assignment.attenderNumber || attenderData.contactNum || 'N/A',
+            };
+          } catch (err) {
+            console.error('Error fetching assignment details:', err);
+            return {
+              ...assignment,
+              driverName: assignment.driverName || 'Unknown Driver',
+              busNumber: assignment.busNumber || 'Unknown Bus',
+              busModel: assignment.busModel || 'Unknown Model',
+              routeName: assignment.routeName || 'Unknown Route',
+              status: assignment.status || 'Unassigned',
+              driverNumber: assignment.driverNumber || 'N/A',
+              attenderName: assignment.attenderName || 'No Attender',
+              attenderNumber: assignment.attenderNumber || 'N/A',
+            };
+          }
+        })
+      );
+
+      setAssignments(formattedAssignments);
+
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      setError('Failed to load assignments. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [API_BASE_URL, getToken, handleAuthError]);
+
+  // Filter available resources based on date and time
+  useEffect(() => {
+    if (selectedDate && selectedTime) {
+      const selectedDateTime = new Date(`${selectedDate}T${selectedTime}`).getTime();
+      
+      // Filter drivers
+      const filteredDrivers = drivers.filter(driver => {
+        const driverAssignments = assignments.filter(a => 
+          a.driverId === driver.stvDriverId && 
+          a.bookingDate === selectedDate
+        );
+        
+        if (driverAssignments.length === 0) return true;
+        
+        return !driverAssignments.some(assignment => {
+          const assignmentTime = new Date(`${assignment.bookingDate}T${assignment.time}`).getTime();
+          return Math.abs(selectedDateTime - assignmentTime) < (14 * 60 * 60 * 1000); // 14 hours
+        });
+      });
+
+      // Filter buses
+      const filteredBuses = buses.filter(bus => {
+        const busAssignments = assignments.filter(a => 
+          a.busId === bus.stvBusId && 
+          a.bookingDate === selectedDate
+        );
+        
+        if (busAssignments.length === 0) return true;
+        
+        return !busAssignments.some(assignment => {
+          const assignmentTime = new Date(`${assignment.bookingDate}T${assignment.time}`).getTime();
+          return Math.abs(selectedDateTime - assignmentTime) < (14 * 60 * 60 * 1000);
+        });
+      });
+
+      // Filter attenders
+      const filteredAttenders = attenders.filter(attender => {
+        const attenderAssignments = assignments.filter(a => 
+          a.attenderId === attender.stvAttenderId && 
+          a.bookingDate === selectedDate
+        );
+        
+        if (attenderAssignments.length === 0) return true;
+        
+        return !attenderAssignments.some(assignment => {
+          const assignmentTime = new Date(`${assignment.bookingDate}T${assignment.time}`).getTime();
+          return Math.abs(selectedDateTime - assignmentTime) < (14 * 60 * 60 * 1000);
+        });
+      });
+
+      setAvailableDrivers(filteredDrivers);
+      setAvailableBuses(filteredBuses);
+      setAvailableAttenders(filteredAttenders);
+    }
+  }, [selectedDate, selectedTime, assignments, drivers, buses, attenders]);
+
+  // Handle assignment creation
+  const handleAssign = async () => {
+    if (!selectedRoute || !selectedDriver || !selectedBus || !selectedAttender || !selectedDate) {
+      setError('Please fill all required fields');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const formattedTime = `${selectedTime}:00`;
+
+      const [selectedDriverObj, selectedBusObj, selectedRouteObj, selectedAttenderObj] = [
+        drivers.find((d) => d.stvDriverId === selectedDriver),
+        buses.find((b) => b.stvBusId === selectedBus),
+        routes.find((r) => r.stvRouteId === selectedRoute),
+        attenders.find((a) => a.stvAttenderId === selectedAttender),
+      ];
+
+      const response = await fetch(`${API_BASE_URL}/api/assignments`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          driverId: selectedDriver,
+          busId: selectedBus,
+          routeId: selectedRoute,
+          attenderId: selectedAttender,
+          bookingDate: selectedDate,
+          time: formattedTime,
+          status: 'Active',
+          driverName: selectedDriverObj?.userName || '',
+          driverNumber: selectedDriverObj?.contactNumber || 'N/A',
+          busNumber: selectedBusObj?.busNumber || '',
+          busModel: selectedBusObj?.busModel || '',
+          routeName: selectedRouteObj?.routeName || '',
+          attenderName: selectedAttenderObj?.username || '',
+          attenderNumber: selectedAttenderObj?.contactNum || 'N/A',
+        }),
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+
+      if (response.ok) {
+        showSuccess('Driver assigned successfully!');
+        await fetchAssignments();
+        
+        // Reset form
+        setSelectedRoute('');
+        setSelectedDriver('');
+        setSelectedBus('');
+        setSelectedAttender('');
+        setSelectedDate(new Date().toISOString().split('T')[0]);
+        setSelectedTime('12:00');
+      } else {
+        const errorData = await response.json();
+        setError(`Failed to create assignment: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      setError('Error creating assignment. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle assignment deletion
+  const handleDeleteAssignment = async (assignmentId) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/assignments/${assignmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        handleAuthError();
+        return;
+      }
+
+      if (response.ok) {
+        showSuccess('Assignment deleted successfully!');
+        await fetchAssignments();
+      } else {
+        setError('Failed to delete assignment');
+      }
+    } catch (error) {
+      console.error('Error deleting assignment:', error);
+      setError('Error deleting assignment. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Refresh all data
+  const handleRefresh = async () => {
+    await Promise.all([fetchDropdownData(), fetchAssignments()]);
+  };
+
+  // Filter assignments based on search term
+  const filteredAssignments = assignments.filter((assignment) =>
+    assignment.driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.busNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.routeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.attenderName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.busModel.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Pagination
+  const totalPages = Math.ceil(filteredAssignments.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const currentAssignments = filteredAssignments.slice(startIndex, endIndex);
+
+  // Pagination handlers
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      setCurrentPage(page);
+    }
+  };
+
+  const goToFirstPage = () => goToPage(1);
+  const goToLastPage = () => goToPage(totalPages);
+  const goToPreviousPage = () => goToPage(currentPage - 1);
+  const goToNextPage = () => goToPage(currentPage + 1);
+
+  // Get status color
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'scheduled': return 'bg-blue-500';
-      case 'in_progress': return 'bg-green-500';
-      case 'completed': return 'bg-purple-500';
-      case 'delayed': return 'bg-red-500';
-      case 'cancelled': return 'bg-gray-500';
-      case 'available': return 'bg-green-500';
-      case 'assigned': return 'bg-blue-500';
-      case 'on_break': return 'bg-yellow-500';
-      case 'maintenance': return 'bg-orange-500';
-      default: return 'bg-gray-500';
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-green-500 text-white';
+      case 'on break':
+        return 'bg-yellow-500 text-white';
+      case 'unassigned':
+        return 'bg-red-500 text-white';
+      case 'maintenance':
+        return 'bg-orange-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'scheduled': return <Clock className="h-4 w-4" />;
-      case 'in_progress': return <Navigation className="h-4 w-4" />;
-      case 'completed': return <CheckCircle className="h-4 w-4" />;
-      case 'delayed': return <AlertCircle className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
+  // Generate pagination numbers
+  const getPaginationNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
+      range.push(i);
     }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots.filter((item, index, arr) => arr.indexOf(item) === index);
   };
 
-  const stats = [
-    { label: 'Active Trips', value: '24', icon: Bus, color: 'text-purple-600' },
-    { label: 'Scheduled Today', value: '18', icon: Calendar, color: 'text-blue-500' },
-    { label: 'Available Drivers', value: '12', icon: User, color: 'text-green-500' },
-    { label: 'Routes Active', value: '8', icon: Route, color: 'text-orange-500' }
-  ];
+  // Initial data load
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      setAuthError(true);
+      return;
+    }
+
+    fetchDropdownData();
+    fetchAssignments();
+  }, [fetchDropdownData, fetchAssignments, getToken]);
+
+  // Reset current page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Show authentication error if not logged in
+  if (authError) {
+    return <AuthenticationError onRetryLogin={handleRetryLogin} />;
+  }
 
   return (
     <div className="animate-in fade-in-up duration-700">
+      {/* Success Message */}
+      {successMessage && (
+        <SuccessMessage 
+          message={successMessage} 
+          onClose={() => setSuccessMessage('')} 
+        />
+      )}
+
       {/* Header */}
       <div className="text-center mb-8 sm:mb-12">
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 sm:mb-6">
@@ -138,209 +592,367 @@ const TripAssignPortal = () => {
           </span>
         </h1>
         <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Efficiently assign trips, manage schedules, and coordinate your fleet operations
+          Assign drivers, buses, and attenders to routes efficiently
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 animate-in fade-in-up duration-700" style={{ animationDelay: '200ms' }}>
-        {stats.map((stat, index) => (
-          <Card key={index} className="bg-card/60 backdrop-blur-sm border border-border/30 hover:border-purple-500/30 hover:bg-card/80 transition-all duration-300 hover:scale-105">
-            <CardContent className="p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-2xl sm:text-3xl font-bold text-foreground">{stat.value}</p>
-                </div>
-                <stat.icon className={`h-6 w-6 sm:h-8 sm:w-8 ${stat.color}`} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Assignment Form */}
+      <Card className="bg-background dark:bg-card/60 border-2 border-border dark:border-purple-800/30 rounded-xl overflow-hidden shadow-lg dark:shadow-purple-500/5 mb-8">
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            Create New Assignment
+          </h2>
+          
+          {/* Form Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+            {/* Date Picker */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                Date
+              </label>
+              <Input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                min={today}
+                className="bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300"
+              />
+            </div>
 
-      {/* View Toggle */}
-      <div className="flex justify-center mb-8 animate-in fade-in-up duration-700" style={{ animationDelay: '400ms' }}>
-        <div className="flex space-x-1 bg-card/50 backdrop-blur-sm rounded-2xl p-2 border border-border/30">
-          {['assignments', 'resources'].map((view) => (
-            <button
-              key={view}
-              onClick={() => setActiveView(view)}
-              className={`px-6 sm:px-8 py-3 rounded-xl font-semibold transition-all duration-300 text-sm sm:text-base min-w-[140px] ${
-                activeView === view
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
-              }`}
-            >
-              {view === 'assignments' ? 'Trip Assignments' : 'Available Resources'}
-            </button>
-          ))}
-        </div>
-      </div>
+            {/* Time Picker */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                Time
+              </label>
+              <Input
+                type="time"
+                value={selectedTime}
+                onChange={(e) => setSelectedTime(e.target.value)}
+                className="bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300"
+              />
+            </div>
 
-      {/* Trip Assignments View */}
-      {activeView === 'assignments' && (
-        <div className="animate-in fade-in-up duration-700" style={{ animationDelay: '600ms' }}>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <h2 className="text-xl sm:text-2xl font-semibold text-foreground">Today's Trip Assignments</h2>
-            <Button className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-lg">
-              <Plus className="h-4 w-4 mr-2" />
-              New Assignment
-            </Button>
+            {/* Route Dropdown */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                Route
+              </label>
+              <select
+                value={selectedRoute}
+                onChange={(e) => setSelectedRoute(e.target.value)}
+                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
+              >
+                <option value="">Select Route</option>
+                {routes.map((route) => (
+                  <option key={route.stvRouteId} value={route.stvRouteId}>
+                    {route.routeName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Bus Dropdown */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Bus className="h-4 w-4" />
+                Bus ({availableBuses.length} available)
+              </label>
+              <select
+                value={selectedBus}
+                onChange={(e) => setSelectedBus(e.target.value)}
+                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
+              >
+                <option value="">Select Bus</option>
+                {availableBuses.map((bus) => (
+                  <option key={bus.stvBusId} value={bus.stvBusId}>
+                    {bus.busNumber} ({bus.busModel})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Driver Dropdown */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <User className="h-4 w-4" />
+                Driver ({availableDrivers.length} available)
+              </label>
+              <select
+                value={selectedDriver}
+                onChange={(e) => setSelectedDriver(e.target.value)}
+                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
+              >
+                <option value="">Select Driver</option>
+                {availableDrivers.map((driver) => (
+                  <option key={driver.stvDriverId} value={driver.stvDriverId}>
+                    {driver.userName} {driver.contactNumber ? `(${driver.contactNumber})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Attender Dropdown */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                Attender ({availableAttenders.length} available)
+              </label>
+              <select
+                value={selectedAttender}
+                onChange={(e) => setSelectedAttender(e.target.value)}
+                className="w-full bg-background dark:bg-card/60 border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 text-foreground rounded-md px-3 py-2 text-sm transition-all duration-300"
+              >
+                <option value="">Select Attender</option>
+                {availableAttenders.map((attender) => (
+                  <option key={attender.stvAttenderId} value={attender.stvAttenderId}>
+                    {attender.username} {attender.contactNum ? `(${attender.contactNum})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Assign Button */}
+            <div className="space-y-2 md:col-span-2 lg:col-span-1">
+              <label className="text-sm font-medium text-transparent">Action</label>
+              <Button
+                onClick={handleAssign}
+                disabled={!selectedRoute || !selectedDriver || !selectedBus || !selectedAttender || !selectedDate || isLoading}
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Assigning...' : 'Assign Trip'}
+              </Button>
+            </div>
+
+            {/* Refresh Button */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-transparent">Refresh</label>
+              <Button
+                onClick={handleRefresh}
+                disabled={isLoading}
+                variant="outline"
+                className="w-full border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 text-foreground hover:text-foreground hover:bg-accent dark:hover:bg-purple-950/30 bg-background dark:bg-card/60 transition-all duration-300"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="grid grid-cols-1 gap-4 sm:gap-6">
-            {mockTrips.map((trip, index) => (
-              <Card key={trip.id} className="bg-card/60 backdrop-blur-sm border border-border/30 hover:border-purple-500/30 hover:bg-card/80 transition-all duration-300 hover:shadow-lg animate-in fade-in-up" style={{ animationDelay: `${(index + 1) * 100}ms` }}>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-4">
-                        <h3 className="font-semibold text-lg text-foreground">{trip.routeName}</h3>
-                        <Badge className={`${getStatusColor(trip.status)} text-white w-fit flex items-center gap-1`}>
-                          {getStatusIcon(trip.status)}
-                          {trip.status.replace('_', ' ').charAt(0).toUpperCase() + trip.status.replace('_', ' ').slice(1)}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                        <div className="flex items-center gap-2">
-                          <Bus className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Bus:</span>
-                          <span className="font-medium">{trip.busNumber}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Driver:</span>
-                          <span className="font-medium">{trip.driverName}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Attendant:</span>
-                          <span className="font-medium">{trip.attendant}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Departure:</span>
-                          <span className="font-medium">{trip.departureTime}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Arrival:</span>
-                          <span className="font-medium">{trip.arrivalTime}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Date:</span>
-                          <span className="font-medium">{trip.date}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-3">
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">Passengers:</span>
-                          <span className="font-medium">{trip.passengers}/{trip.capacity}</span>
-                          <div className="flex-1 bg-muted/50 rounded-full h-2 ml-2">
-                            <div 
-                              className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500" 
-                              style={{ width: `${(trip.passengers / trip.capacity) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-border/30 hover:border-purple-500/50 hover:bg-purple-500/10 bg-card/60 backdrop-blur-sm"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-800 rounded-lg">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2" />
+            <div className="text-red-800 dark:text-red-200">{error}</div>
           </div>
         </div>
       )}
 
-      {/* Resources View */}
-      {activeView === 'resources' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 animate-in fade-in-up duration-700" style={{ animationDelay: '600ms' }}>
-          {/* Drivers */}
-          <Card className="bg-card/60 backdrop-blur-sm border border-border/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <User className="h-5 w-5 text-purple-500" />
-                Available Drivers
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {availableResources.drivers.map((driver, index) => (
-                <div key={driver.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/30 hover:bg-background/70 transition-all duration-300 animate-in fade-in-up" style={{ animationDelay: `${(index + 1) * 50}ms` }}>
-                  <div>
-                    <p className="font-medium text-foreground">{driver.name}</p>
-                    <p className="text-sm text-muted-foreground">{driver.experience}</p>
-                  </div>
-                  <Badge className={`${getStatusColor(driver.status)} text-white text-xs`}>
-                    {driver.status.replace('_', ' ')}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Search and Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search assignments by driver, bus, route, or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 bg-background border-2 border-input hover:border-purple-400/60 focus:border-purple-500 dark:bg-card/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 dark:focus:border-purple-500 transition-all duration-300 text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+      </div>
 
-          {/* Buses */}
-          <Card className="bg-card/60 backdrop-blur-sm border border-border/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <Bus className="h-5 w-5 text-purple-500" />
-                Fleet Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {availableResources.buses.map((bus, index) => (
-                <div key={bus.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border/30 hover:bg-background/70 transition-all duration-300 animate-in fade-in-up" style={{ animationDelay: `${(index + 1) * 50}ms` }}>
-                  <div>
-                    <p className="font-medium text-foreground">{bus.number}</p>
-                    <p className="text-sm text-muted-foreground">Capacity: {bus.capacity} | {bus.condition}</p>
-                  </div>
-                  <Badge className={`${getStatusColor(bus.status)} text-white text-xs`}>
-                    {bus.status}
-                  </Badge>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Assignments Table */}
+      <Card className="bg-background dark:bg-card/60 border-2 border-border dark:border-purple-800/30 rounded-xl overflow-hidden shadow-lg dark:shadow-purple-500/5">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50 dark:bg-purple-950/20">
+                <tr className="border-b-2 border-border dark:border-purple-500/30">
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Driver</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Bus</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Bus Model</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Route</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Status</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Date & Time</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Attender</th>
+                  <th className="text-left p-4 font-semibold text-foreground text-sm uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-background dark:bg-transparent">
+                {isLoading ? (
+                  [...Array(pageSize)].map((_, i) => <SkeletonRow key={i} />)
+                ) : currentAssignments.length > 0 ? (
+                  currentAssignments.map((assignment, index) => (
+                    <tr
+                      key={assignment.id}
+                      className={`border-b border-border dark:border-purple-500/20 hover:bg-muted/30 dark:hover:bg-purple-950/30 transition-colors duration-200 ${
+                        index % 2 === 0 ? "bg-card/20 dark:bg-card/10" : "bg-transparent"
+                      }`}
+                    >
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium text-foreground text-base">{assignment.driverName}</div>
+                          <div className="text-sm text-muted-foreground">{assignment.driverNumber}</div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-medium text-foreground">{assignment.busNumber}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-foreground">{assignment.busModel}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-foreground">{assignment.routeName}</div>
+                      </td>
+                      <td className="p-4">
+                        <Badge className={`${getStatusColor(assignment.status)} font-medium`}>
+                          {assignment.status}
+                        </Badge>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-foreground font-medium">{assignment.bookingDate}</div>
+                        <div className="text-sm text-muted-foreground">{assignment.time}</div>
+                      </td>
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium text-foreground">{assignment.attenderName}</div>
+                          <div className="text-sm text-muted-foreground">{assignment.attenderNumber}</div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDeleteAssignment(assignment.id)}
+                          className="border-2 border-red-200 hover:border-red-400 dark:border-red-800/50 dark:hover:border-red-600 text-red-600 hover:text-white hover:bg-red-600 dark:text-red-400 dark:hover:text-white transition-all duration-300"
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="p-8 text-center">
+                      <Bus className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-foreground mb-2">No assignments found</h3>
+                      <p className="text-muted-foreground">
+                        {searchTerm 
+                          ? 'Try adjusting your search criteria'
+                          : 'No trip assignments available at the moment'
+                        }
+                      </p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Routes */}
-          <Card className="bg-card/60 backdrop-blur-sm border border-border/30">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <MapPin className="h-5 w-5 text-purple-500" />
-                Active Routes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {availableResources.routes.map((route, index) => (
-                <div key={route.id} className="p-3 bg-background/50 rounded-lg border border-border/30 hover:bg-background/70 transition-all duration-300 animate-in fade-in-up" style={{ animationDelay: `${(index + 1) * 50}ms` }}>
-                  <p className="font-medium text-foreground">{route.name}</p>
-                  <p className="text-sm text-muted-foreground">{route.distance} • {route.duration}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+      {/* Pagination */}
+      {!isLoading && !error && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-border/30">
+          <div className="text-sm text-muted-foreground">
+            Showing {currentAssignments.length > 0 ? startIndex + 1 : 0} to {Math.min(endIndex, filteredAssignments.length)} of {filteredAssignments.length} assignments
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToFirstPage}
+              disabled={currentPage === 1}
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex items-center gap-1">
+              {totalPages <= 7 ? (
+                [...Array(totalPages)].map((_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum)}
+                      className={currentPage === pageNum ? 
+                        "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-sm" : 
+                        "border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 bg-background dark:bg-card/60 transition-all duration-300"
+                      }
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })
+              ) : (
+                getPaginationNumbers().map((pageNum, index) => {
+                  if (pageNum === '...') {
+                    return (
+                      <span key={`dots-${index}`} className="px-2 py-1 text-muted-foreground">
+                        ...
+                      </span>
+                    );
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNum)}
+                      className={currentPage === pageNum ? 
+                        "bg-gradient-to-r from-purple-500 to-purple-600 text-white hover:from-purple-600 hover:to-purple-700 shadow-sm" : 
+                        "border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 bg-background dark:bg-card/60 transition-all duration-300"
+                      }
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })
+              )}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goToLastPage}
+              disabled={currentPage === totalPages}
+              className="border-2 border-input hover:border-purple-400/60 dark:border-purple-800/30 dark:hover:border-purple-600/60 disabled:opacity-50 disabled:cursor-not-allowed bg-background dark:bg-card/60 transition-all duration-300"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
     </div>
