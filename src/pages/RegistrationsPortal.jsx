@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card.jsx';
 import { Button } from '../components/ui/button.jsx';
+import useLogoutConfirmation from '../hooks/useLogoutConfirmation.js';
+import LogoutConfirmationDialog from '../components/LogoutConfirmationDialog.jsx';
 
 // Authentication Error Component
 const AuthenticationError = ({ onRetryLogin }) => (
@@ -34,106 +36,26 @@ const AuthenticationError = ({ onRetryLogin }) => (
 
 const RegistrationsPortal = () => {
   const navigate = useNavigate();
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { 
+    showLogoutDialog, 
+    handleLogoutConfirm, 
+    handleLogoutCancel, 
+    handleBrowserBack 
+  } = useLogoutConfirmation();
   
-  // Clear all data function
-  const clearAllData = () => {
-    try {
-      // Clear localStorage
-      localStorage.clear();
-      
-      // Clear sessionStorage  
-      sessionStorage.clear();
-      
-      // Clear all cookies
-      document.cookie.split(";").forEach((cookie) => {
-        const eqPos = cookie.indexOf("=");
-        const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
-        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${window.location.hostname}`;
-        document.cookie = `${name.trim()}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=.${window.location.hostname}`;
-      });
-      
-      // Clear console
-      console.clear();
-      
-      // Clear any cached data in memory
-      if (window.caches) {
-        window.caches.keys().then(names => {
-          names.forEach(name => {
-            window.caches.delete(name);
-          });
-        });
-      }
-      
-      // Clear indexedDB if exists
-      if (window.indexedDB) {
-        try {
-          indexedDB.deleteDatabase('app-db');
-        } catch (e) {
-          console.log('IndexedDB clear failed:', e);
-        }
-      }
-    } catch (error) {
-      console.log('Data clearing error:', error);
-    }
-  };
-
-  // Handle logout confirmation
-  const handleLogoutConfirm = () => {
-    clearAllData();
-    setShowLogoutDialog(false);
-    
-    // Prevent back navigation by pushing multiple history states
-    window.history.pushState(null, "", window.location.href);
-    window.history.pushState(null, "", window.location.href);
-    
-    // Navigate to login
-    navigate("/login", { replace: true });
-    
-    // Prevent future back navigation
-    window.onpopstate = () => {
-      navigate("/login", { replace: true });
-    };
-  };
-
-  // Handle logout cancel
-  const handleLogoutCancel = () => {
-    setShowLogoutDialog(false);
-    // Push state to prevent actual navigation
-    window.history.pushState(null, "", window.location.href);
-  };
-
   // Browser back button detection
   useEffect(() => {
-    const handlePopState = (event) => {
-      // Prevent the default back navigation
-      event.preventDefault();
-      
-      // Check if user is authenticated
-      const token = localStorage.getItem('operatortoken');
-      if (token) {
-        // Show logout confirmation dialog
-        setShowLogoutDialog(true);
-        // Push state to maintain current location
-        window.history.pushState(null, "", window.location.href);
-      } else {
-        // If no token, just navigate to login
-        navigate("/login", { replace: true });
-      }
-    };
-
     // Add event listener for browser back button
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', handleBrowserBack);
     
     // Push initial state to handle back button
     window.history.pushState(null, "", window.location.href);
     
     // Cleanup
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('popstate', handleBrowserBack);
     };
-  }, [navigate]);
+  }, [handleBrowserBack]);
   
   // Check authentication on mount
   useEffect(() => {
@@ -210,59 +132,48 @@ const RegistrationsPortal = () => {
   ];
 
   const handleRegistrationClick = (type) => {
-    // Show a notification
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-500 border border-purple-400/20';
-    notification.innerHTML = `
-      <div class="font-semibold">Opening ${type.title}</div>
-    `;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        document.body.removeChild(notification);
-      }
-    }, 3000);
+    // Navigate to specific registration forms
+    switch (type.id) {
+      case 'driver':
+        navigate('/dashboard/registration/driver');
+        break;
+      case 'attender':
+        navigate('/dashboard/registration/attender');
+        break;
+      case 'bus':
+        navigate('/dashboard/registration/bus');
+        break;
+      case 'route':
+        navigate('/dashboard/registration/route');
+        break;
+      case 'admin':
+        navigate('/dashboard/registration/admin');
+        break;
+      default:
+        // Show a notification for now
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-500 border border-purple-400/20';
+        notification.innerHTML = `
+          <div class="font-semibold">Opening ${type.title}</div>
+        `;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 3000);
+    }
   };
 
   return (
     <div className="animate-in fade-in-up duration-700">
       {/* Logout Confirmation Dialog */}
-      {showLogoutDialog && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border-2 border-red-200 dark:border-red-800 max-w-md w-full p-6 animate-in fade-in-0 zoom-in-95 duration-200">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-                Logout Confirmation
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                You are about to logout and clear all data. All your session data will be cleared. Do you want to continue?
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleLogoutCancel}
-                  className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 border-2 border-transparent hover:border-gray-300 dark:hover:border-gray-500"
-                  data-testid="logout-cancel-button"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleLogoutConfirm}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                  data-testid="logout-confirm-button"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <LogoutConfirmationDialog
+        showDialog={showLogoutDialog}
+        onConfirm={handleLogoutConfirm}
+        onCancel={handleLogoutCancel}
+      />
       
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
