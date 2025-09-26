@@ -12,4 +12,8 @@ RUN npm install -g serve
 
 EXPOSE 3030
 
+<<<<<<< HEAD
 CMD ["serve", "-s", "build", "-l", "3030"]
+=======
+CMD ["serve", "-s", "build", "-l", "3030"]
+>>>>>>> 387b909b19e7bd7523983fe41962a78caedd2d7b
