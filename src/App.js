@@ -5,6 +5,7 @@ import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import { Toaster } from "./components/ui/toaster.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import Booking from "./pages/Booking.jsx";
 import DashboardLayout from "./pages/DashboardLayout.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import RegistrationsPortal from "./pages/RegistrationsPortal.jsx";
@@ -24,6 +25,7 @@ function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/booking" element={<Booking />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<RegistrationsPortal />} />

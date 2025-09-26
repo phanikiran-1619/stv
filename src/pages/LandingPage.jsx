@@ -114,12 +114,15 @@ const LandingPage = () => {
                 <ArrowRight className="ml-3 h-6 w-6" />
               </Button>
             </Link>
-            <Button 
-              variant="outline" 
-              className="border-2 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-500 hover:text-white px-8 sm:px-12 py-4 rounded-2xl text-lg sm:text-xl font-semibold transition-all duration-500 transform hover:scale-110 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
-            >
-              Book Tickets
-            </Button>
+            <Link to="/booking">
+              <Button 
+                variant="outline" 
+                className="border-2 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-500 hover:text-white px-8 sm:px-12 py-4 rounded-2xl text-lg sm:text-xl font-semibold transition-all duration-500 transform hover:scale-110 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg hover:shadow-xl"
+                data-testid="book-tickets-button"
+              >
+                Book Tickets
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

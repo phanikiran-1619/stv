@@ -10,8 +10,6 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card.jsx';
 import { Button } from '../components/ui/button.jsx';
-import useLogoutConfirmation from '../hooks/useLogoutConfirmation.js';
-import LogoutConfirmationDialog from '../components/LogoutConfirmationDialog.jsx';
 
 // Authentication Error Component
 const AuthenticationError = ({ onRetryLogin }) => (
@@ -36,26 +34,6 @@ const AuthenticationError = ({ onRetryLogin }) => (
 
 const RegistrationsPortal = () => {
   const navigate = useNavigate();
-  const { 
-    showLogoutDialog, 
-    handleLogoutConfirm, 
-    handleLogoutCancel, 
-    handleBrowserBack 
-  } = useLogoutConfirmation();
-  
-  // Browser back button detection
-  useEffect(() => {
-    // Add event listener for browser back button
-    window.addEventListener('popstate', handleBrowserBack);
-    
-    // Push initial state to handle back button
-    window.history.pushState(null, "", window.location.href);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('popstate', handleBrowserBack);
-    };
-  }, [handleBrowserBack]);
   
   // Check authentication on mount
   useEffect(() => {
@@ -168,13 +146,6 @@ const RegistrationsPortal = () => {
 
   return (
     <div className="animate-in fade-in-up duration-700">
-      {/* Logout Confirmation Dialog */}
-      <LogoutConfirmationDialog
-        showDialog={showLogoutDialog}
-        onConfirm={handleLogoutConfirm}
-        onCancel={handleLogoutCancel}
-      />
-      
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-12">

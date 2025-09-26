@@ -10,8 +10,8 @@ const DashboardLayout = () => {
   const { 
     showLogoutDialog, 
     handleLogoutConfirm, 
-    handleLogoutCancel, 
-    handleBrowserBack 
+    handleLogoutCancel,
+    setShowLogoutDialog
   } = useLogoutConfirmation();
   
   // Determine active tab from URL
@@ -23,6 +23,39 @@ const DashboardLayout = () => {
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTab());
+
+  // Update active tab when location changes
+  useEffect(() => {
+    setActiveTab(getActiveTab());
+  }, [location.pathname]);
+
+  // Custom browser back button handler
+  const handleBrowserBack = (event) => {
+    event.preventDefault();
+    
+    // Check current route
+    const currentPath = location.pathname;
+    
+    // Only show logout confirmation if on /dashboard/registration route
+    if (currentPath === '/dashboard/registration' || currentPath === '/dashboard') {
+      // Check if user is authenticated
+      const adminToken = localStorage.getItem("admintoken");
+      const operatorToken = localStorage.getItem("operatortoken");
+      
+      if (adminToken || operatorToken) {
+        // Show logout confirmation dialog
+        setShowLogoutDialog(true);
+        // Push state to maintain current location
+        window.history.pushState(null, "", window.location.href);
+      } else {
+        // If no token, just navigate to login
+        navigate("/login", { replace: true });
+      }
+    } else {
+      // For other dashboard routes, allow normal back navigation
+      navigate(-1);
+    }
+  };
 
   // Browser back button detection
   useEffect(() => {
@@ -36,7 +69,7 @@ const DashboardLayout = () => {
     return () => {
       window.removeEventListener('popstate', handleBrowserBack);
     };
-  }, [handleBrowserBack]);
+  }, [location.pathname]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);

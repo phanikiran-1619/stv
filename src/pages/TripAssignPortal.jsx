@@ -372,7 +372,7 @@ const TripAssignPortal = () => {
           driverName: selectedDriverObj?.userName || '',
           driverNumber: selectedDriverObj?.contactNumber || 'N/A',
           busNumber: selectedBusObj?.busNumber || '',
-          busModel: selectedBusObj?.busModel || '',
+          busmodel: selectedBusObj?.busmodel || '',
           routeName: selectedRouteObj?.routeName || '',
           attenderName: selectedAttenderObj?.username || '',
           attenderNumber: selectedAttenderObj?.contactNum || 'N/A',
@@ -462,11 +462,11 @@ const TripAssignPortal = () => {
   // Filter assignments based on search term
   const filteredAssignments = assignments.filter((assignment) =>
     assignment.driverName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.busNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    assignment.busId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     assignment.routeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     assignment.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     assignment.attenderName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    assignment.busModel?.toLowerCase().includes(searchTerm.toLowerCase())
+    assignment.busmodel?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Pagination
@@ -650,7 +650,7 @@ const TripAssignPortal = () => {
                   <option value="">Select Bus</option>
                   {availableBuses.map((bus) => (
                     <option key={bus.stvBusId} value={bus.stvBusId}>
-                      {bus.busNumber} ({bus.busModel})
+                      {bus.busNumber} ({bus.busmodel})
                     </option>
                   ))}
                 </select>
@@ -781,10 +781,10 @@ const TripAssignPortal = () => {
                           </div>
                         </td>
                         <td className="p-6">
-                          <div className="font-medium text-gray-800 dark:text-gray-100">{assignment.busNumber || 'N/A'}</div>
+                          <div className="font-medium text-gray-800 dark:text-gray-100">{assignment.busId || 'N/A'}</div>
                         </td>
                         <td className="p-6">
-                          <div className="text-gray-700 dark:text-gray-200">{assignment.busModel || 'N/A'}</div>
+                          <div className="text-gray-700 dark:text-gray-200">{assignment.busmodel || 'N/A'}</div>
                         </td>
                         <td className="p-6">
                           <div className="text-gray-700 dark:text-gray-200">{assignment.routeName || 'N/A'}</div>
