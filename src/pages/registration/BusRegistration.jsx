@@ -1,66 +1,627 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bus, Calendar, Gauge, Settings, Fuel } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card.jsx';
+import { 
+  ArrowLeft,
+  UserPlus, 
+  CheckCircle, 
+  AlertCircle, 
+  Save, 
+  Upload, 
+  Download,
+  Search,
+  X,
+  Bus
+} from 'lucide-react';
 import { Button } from '../../components/ui/button.jsx';
-import useLogoutConfirmation from '../../hooks/useLogoutConfirmation.js';
-import LogoutConfirmationDialog from '../../components/LogoutConfirmationDialog.jsx';
+import * as XLSX from "xlsx";
 
 const BusRegistration = () => {
   const navigate = useNavigate();
-  const { 
-    showLogoutDialog, 
-    handleLogoutConfirm, 
-    handleLogoutCancel, 
-    handleBrowserBack 
-  } = useLogoutConfirmation();
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [buses, setBuses] = useState([]);
+  const [filteredBuses, setFilteredBuses] = useState([]);
+  const [selectedBusId, setSelectedBusId] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
   const [formData, setFormData] = useState({
-    busId: '',
-    registrationNumber: '',
-    model: '',
-    manufacturer: '',
-    yearOfManufacture: '',
-    capacity: '',
-    fuelType: '',
-    engineNumber: '',
-    chassisNumber: '',
-    color: '',
-    insuranceNumber: '',
-    insuranceExpiryDate: '',
-    fitnessExpiryDate: '',
-    pollutionExpiryDate: '',
-    roadTaxExpiryDate: '',
-    purchaseDate: '',
-    purchasePrice: '',
-    currentValue: '',
-    features: {
-      airConditioning: false,
-      wifi: false,
-      gps: false,
-      cctv: false,
-      musicSystem: false,
-      chargingPorts: false,
-      emergencyExit: false,
-      fireExtinguisher: false
-    },
-    maintenanceSchedule: 'monthly',
-    status: 'active',
-    depot: '',
-    insuranceProvider: '',
-    lastServiceDate: '',
-    nextServiceDate: ''
+    busNumber: '',
+    serviceNumber: '',
+    busModel: '',
+    busType: '',
+    busSeating: '',
+    status: true,
   });
+  const [errors, setErrors] = useState({});
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [excelError, setExcelError] = useState(null);
+  const [availableBusTypes, setAvailableBusTypes] = useState([]);
+
+  // Default bus type options
+  const defaultBusTypeOptions = [
+    "A/C Seater",
+    "A/C Sleeper", 
+    "Non A/C Seater",
+    "Non A/c Sleeper",
+    "A/C Seater+Sleeper",
+    "Non A/C Seater+Sleeper",
+  ];
+
+  const formRefs = {
+    busNumber: useRef(null),
+    serviceNumber: useRef(null),
+    busModel: useRef(null),
+    busType: useRef(null),
+    busSeating: useRef(null),
+  };
+
+  const fileInputRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Get token from localStorage
+  const getToken = () => localStorage.getItem('operatortoken');
+
+  // Initialize bus types
+  useEffect(() => {
+    setAvailableBusTypes([...defaultBusTypeOptions]);
+  }, []);
 
   // Browser back button detection
   useEffect(() => {
-    window.addEventListener('popstate', handleBrowserBack);
+    const handlePopState = (event) => {
+      // Prevent default browser back behavior
+      event.preventDefault();
+      // Navigate to registration portal
+      navigate('/dashboard/registration');
+    };
+    
+    // Add event listener for browser back button
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push current state to prevent immediate back navigation
     window.history.pushState(null, "", window.location.href);
     
     return () => {
-      window.removeEventListener('popstate', handleBrowserBack);
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, [handleBrowserBack]);
+  }, [navigate]);
+
+  // Reset form
+  const resetForm = useCallback(() => {
+    setFormData({
+      busNumber: '',
+      serviceNumber: '',
+      busModel: '',
+      busType: '',
+      busSeating: '',
+      status: true,
+    });
+    setErrors({});
+    setErrorMessage('');
+    setIsSuccess(false);
+    setSuccessMessage('');
+    setSelectedBusId('');
+    setSearchTerm('');
+    setExcelError(null);
+    setAvailableBusTypes([...defaultBusTypeOptions]);
+  }, []);
+
+  // Handle mode switch
+  const handleModeSwitch = useCallback(() => {
+    setIsEditMode(!isEditMode);
+    resetForm();
+    if (!isEditMode) {
+      fetchBuses();
+    }
+  }, [isEditMode, resetForm]);
+
+  // Fetch all buses for dropdown
+  const fetchBuses = async () => {
+    try {
+      const token = getToken();
+      if (!token) {
+        setErrorMessage('No authentication token found');
+        return;
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/buses`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch buses');
+      }
+
+      const data = await response.json();
+      setBuses(data);
+      setFilteredBuses(data);
+    } catch (error) {
+      console.error('Fetch buses error:', error);
+      setErrorMessage('Failed to load buses list');
+    }
+  };
+
+  // Fetch specific bus data
+  const fetchBusData = async (busId) => {
+    setIsLoading(true);
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/buses/${busId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch bus data');
+      }
+
+      const data = await response.json();
+      
+      // Check if the bus type from API exists in our options, if not add it
+      let updatedBusTypes = [...defaultBusTypeOptions];
+      if (data.busType && !updatedBusTypes.includes(data.busType)) {
+        updatedBusTypes.push(data.busType);
+        setAvailableBusTypes(updatedBusTypes);
+      }
+
+      setFormData({
+        busNumber: data.busNumber || '',
+        serviceNumber: data.serviceNumber || '',
+        busModel: data.busModel || '',
+        busType: data.busType || '',
+        busSeating: data.busSeating ? data.busSeating.toString() : '',
+        status: data.status !== undefined ? data.status : true,
+      });
+    } catch (error) {
+      console.error('Fetch bus error:', error);
+      setErrorMessage('Failed to load bus data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle dropdown search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    const filtered = buses.filter(bus =>
+      bus.stvBusId?.toLowerCase().includes(value.toLowerCase()) ||
+      bus.busNumber?.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredBuses(filtered);
+  };
+
+  // Handle dropdown selection
+  const handleBusSelect = (bus) => {
+    setSelectedBusId(bus.stvBusId);
+    setSearchTerm(`${bus.stvBusId} - ${bus.busNumber}`);
+    setShowDropdown(false);
+    fetchBusData(bus.stvBusId);
+  };
+
+  // Validation functions
+  const validateField = useCallback((name, value) => {
+    switch (name) {
+      case 'busNumber':
+        if (!value) return 'Bus number is required';
+        if (value.length > 20) return 'Must be 20 characters or less';
+        return '';
+      case 'serviceNumber':
+        if (!value) return 'Service number is required';
+        if (value.length > 20) return 'Must be 20 characters or less';
+        return '';
+      case 'busModel':
+        if (!value) return 'Bus model is required';
+        if (value.length > 50) return 'Must be 50 characters or less';
+        return '';
+      case 'busType':
+        if (!value) return 'Bus type is required';
+        if (!availableBusTypes.includes(value)) return 'Must be a valid bus type';
+        return '';
+      case 'busSeating':
+        if (!value) return 'Bus seating is required';
+        const seatingNum = parseInt(value);
+        if (isNaN(seatingNum) || seatingNum <= 0) return 'Must be a positive number';
+        return '';
+      default:
+        return '';
+    }
+  }, [availableBusTypes]);
+
+  // Validation functions for Excel data
+  const validateExcelField = (name, value) => {
+    switch (name) {
+      case 'busNumber':
+        if (!value) return 'Bus number is required';
+        if (value.length > 20) return 'Must be 20 characters or less';
+        return '';
+      case 'serviceNumber':
+        if (!value) return 'Service number is required';
+        if (value.length > 20) return 'Must be 20 characters or less';
+        return '';
+      case 'busModel':
+        if (!value) return 'Bus model is required';
+        if (value.length > 50) return 'Must be 50 characters or less';
+        return '';
+      case 'busType':
+        if (!value) return 'Bus type is required';
+        return '';
+      case 'busSeating':
+        if (!value) return 'Bus seating is required';
+        const seatingNum = parseInt(value);
+        if (isNaN(seatingNum) || seatingNum <= 0) return 'Must be a positive number';
+        return '';
+      case 'status':
+        if (value !== 'true' && value !== 'false') return 'Status must be true or false';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  // Check for duplicates within Excel data
+  const checkExcelDuplicates = (busDataArray) => {
+    const seenBusNumbers = new Set();
+    const seenServiceNumbers = new Set();
+
+    for (let i = 0; i < busDataArray.length; i++) {
+      const bus = busDataArray[i];
+      if (seenBusNumbers.has(bus.busNumber)) {
+        setExcelError(`Row ${i + 2}: Duplicate bus number: ${bus.busNumber}`);
+        return false;
+      }
+      if (seenServiceNumbers.has(bus.serviceNumber)) {
+        setExcelError(`Row ${i + 2}: Duplicate service number: ${bus.serviceNumber}`);
+        return false;
+      }
+      seenBusNumbers.add(bus.busNumber);
+      seenServiceNumbers.add(bus.serviceNumber);
+    }
+    return true;
+  };
+
+  // Validate entire form
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+
+    if (isEditMode && !selectedBusId) {
+      setErrorMessage('Please select a bus to update');
+      return false;
+    }
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key !== 'status') {
+        const error = validateField(key, value);
+        if (error) {
+          newErrors[key] = error;
+        }
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData, isEditMode, selectedBusId, validateField]);
+
+  // Handle input changes
+  const handleChange = useCallback((e) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Handle different input types
+    if (type === 'checkbox') {
+      setFormData(prev => ({ ...prev, [name]: checked }));
+    } else if (name === 'busSeating') {
+      // Only allow numbers for bus seating
+      if (/^\d*$/.test(value)) {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    
+    // Clear error for this field
+    setErrors(prev => ({ ...prev, [name]: undefined }));
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      const firstErrorField = Object.keys(errors).find(key => errors[key]);
+      if (firstErrorField && formRefs[firstErrorField]?.current) {
+        formRefs[firstErrorField].current.focus();
+      }
+      return;
+    }
+
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const token = getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const payload = {
+        busNumber: formData.busNumber,
+        serviceNumber: formData.serviceNumber,
+        busModel: formData.busModel,
+        busType: formData.busType,
+        busSeating: parseInt(formData.busSeating),
+        status: formData.status,
+      };
+
+      const url = isEditMode
+        ? `${process.env.REACT_APP_API_BASE_URL1}/api/buses/${selectedBusId}`
+        : `${process.env.REACT_APP_API_BASE_URL1}/api/buses`;
+
+      const response = await fetch(url, {
+        method: isEditMode ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.error || responseData.message || (isEditMode ? 'Failed to update bus' : 'Failed to register bus'));
+      }
+
+      setIsLoading(false);
+      setIsSuccess(true);
+      
+      if (isEditMode) {
+        setSuccessMessage(`Bus updated successfully! Bus ID: ${selectedBusId}`);
+      } else {
+        setSuccessMessage(`Registration successful! Bus ID: ${responseData.stvBusId}`);
+      }
+
+      setTimeout(() => {
+        setIsSuccess(false);
+        resetForm();
+      }, 3000);
+
+    } catch (error) {
+      console.error('API error:', error);
+      setIsLoading(false);
+      setErrorMessage(error.message || 'An error occurred');
+    }
+  }, [formData, validateForm, errors, formRefs, isEditMode, selectedBusId, resetForm]);
+
+  // Download Excel template
+  const downloadTemplate = async () => {
+    try {
+      const templateData = [
+        {
+          'Bus Number': 'MH12AB3456',
+          'Service Number': 'SVC456',
+          'Bus Model': 'Tata Starbus',
+          'Bus Type': 'A/C Seater',
+          'Bus Seating': '32',
+          'Status': 'true'
+        }
+      ];
+      
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Bus Template");
+      XLSX.writeFile(workbook, `bus_registration_template.xlsx`);
+      
+      setSuccessMessage("Excel template downloaded successfully!");
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Download failed:', error);
+      setErrorMessage("Failed to download template");
+    }
+  };
+
+  // Handle Excel upload
+  const handleExcelUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const token = getToken();
+    if (!token) {
+      setErrorMessage("Please log in again.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const headers = jsonData[0];
+        
+        const requiredHeaders = [
+          "Bus Number",
+          "Service Number", 
+          "Bus Model",
+          "Bus Type",
+          "Bus Seating",
+          "Status"
+        ];
+        
+        const missingRequiredHeaders = requiredHeaders.filter(
+          (header) => !headers.includes(header)
+        );
+        
+        if (missingRequiredHeaders.length > 0) {
+          setExcelError(`Missing required headers: ${missingRequiredHeaders.join(", ")}`);
+          return;
+        }
+
+        const busDataArray = [];
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row || row.length === 0) continue;
+
+          const rowObject = headers.reduce((obj, header, index) => {
+            obj[header] = String(row[index] ?? "").trim();
+            return obj;
+          }, {});
+
+          // Check if all required fields are present
+          if (
+            !rowObject["Bus Number"] ||
+            !rowObject["Service Number"] ||
+            !rowObject["Bus Model"] ||
+            !rowObject["Bus Type"] ||
+            !rowObject["Bus Seating"] ||
+            !rowObject["Status"]
+          ) {
+            setExcelError(
+              `Row ${i + 1}: Missing required fields`
+            );
+            return;
+          }
+
+          // Validate each field
+          const validationErrors = [];
+          const busNumber = validateExcelField('busNumber', rowObject["Bus Number"]);
+          if (busNumber) validationErrors.push(`Bus Number: ${busNumber}`);
+          
+          const serviceNumber = validateExcelField('serviceNumber', rowObject["Service Number"]);
+          if (serviceNumber) validationErrors.push(`Service Number: ${serviceNumber}`);
+          
+          const busModel = validateExcelField('busModel', rowObject["Bus Model"]);
+          if (busModel) validationErrors.push(`Bus Model: ${busModel}`);
+          
+          const busType = validateExcelField('busType', rowObject["Bus Type"]);
+          if (busType) validationErrors.push(`Bus Type: ${busType}`);
+          
+          const busSeating = validateExcelField('busSeating', rowObject["Bus Seating"]);
+          if (busSeating) validationErrors.push(`Bus Seating: ${busSeating}`);
+          
+          const status = validateExcelField('status', rowObject["Status"]);
+          if (status) validationErrors.push(`Status: ${status}`);
+
+          if (validationErrors.length > 0) {
+            setExcelError(`Row ${i + 1} validation errors: ${validationErrors.join('; ')}`);
+            return;
+          }
+
+          busDataArray.push({
+            busNumber: rowObject["Bus Number"],
+            serviceNumber: rowObject["Service Number"],
+            busModel: rowObject["Bus Model"],
+            busType: rowObject["Bus Type"],
+            busSeating: parseInt(rowObject["Bus Seating"]),
+            status: rowObject["Status"].toLowerCase() === 'true',
+          });
+        }
+
+        if (busDataArray.length === 0) {
+          setExcelError("Excel file contains no valid data rows.");
+          return;
+        }
+
+        if (!checkExcelDuplicates(busDataArray)) {
+          return;
+        }
+
+        setIsUploading(true);
+        const failedRegistrations = [];
+        let successCount = 0;
+
+        for (const busData of busDataArray) {
+          try {
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/buses`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+              },
+              body: JSON.stringify(busData),
+            });
+
+            let responseData = {};
+            try {
+              responseData = await response.json();
+            } catch (parseError) {
+              const responseText = await response.text();
+              responseData = { error: responseText || "Invalid response format" };
+            }
+            
+            if (!response.ok) {
+              const errorMessage = responseData.error || responseData.message || `HTTP ${response.status}: Registration failed`;
+              failedRegistrations.push(`${busData.busNumber}: ${errorMessage}`);
+            } else {
+              successCount++;
+            }
+          } catch (error) {
+            failedRegistrations.push(`${busData.busNumber}: Network or unexpected error - ${error.message}`);
+          }
+        }
+
+        setIsUploading(false);
+
+        if (failedRegistrations.length === 0) {
+          setSuccessMessage(`${successCount} buses registered successfully`);
+          setIsSuccess(true);
+          setExcelError(null);
+          setTimeout(() => {
+            setIsSuccess(false);
+          }, 3000);
+        } else {
+          let message = "";
+          if (successCount > 0) {
+            message += `✅ ${successCount} buses registered successfully\n\n`;
+          }
+          message += `❌ Failed to register ${failedRegistrations.length} buses:\n\n`;
+          message += failedRegistrations.map((error, index) => `${index + 1}. ${error}`).join("\n");
+          setExcelError(message);
+        }
+      } catch (error) {
+        console.error("Error parsing Excel file:", error);
+        setExcelError("Failed to parse Excel file. Ensure it is a valid Excel file.");
+        setIsUploading(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    
+    // Clear the file input
+    e.target.value = '';
+  };
+
+  // Click outside dropdown handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Initialize buses on edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      fetchBuses();
+    }
+  }, [isEditMode]);
 
   // Check authentication
   useEffect(() => {
@@ -71,619 +632,385 @@ const BusRegistration = () => {
     }
   }, [navigate]);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (name.startsWith('features.')) {
-      const feature = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        features: {
-          ...prev.features,
-          [feature]: checked
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Show success notification
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 z-50 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-right duration-500';
-    notification.innerHTML = `
-      <div class="font-semibold">Bus Registration Successful!</div>
-    `;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        document.body.removeChild(notification);
-      }
-    }, 3000);
-
-    console.log('Bus Registration Data:', formData);
-    
-    // Reset form
-    setFormData({
-      busId: '',
-      registrationNumber: '',
-      model: '',
-      manufacturer: '',
-      yearOfManufacture: '',
-      capacity: '',
-      fuelType: '',
-      engineNumber: '',
-      chassisNumber: '',
-      color: '',
-      insuranceNumber: '',
-      insuranceExpiryDate: '',
-      fitnessExpiryDate: '',
-      pollutionExpiryDate: '',
-      roadTaxExpiryDate: '',
-      purchaseDate: '',
-      purchasePrice: '',
-      currentValue: '',
-      features: {
-        airConditioning: false,
-        wifi: false,
-        gps: false,
-        cctv: false,
-        musicSystem: false,
-        chargingPorts: false,
-        emergencyExit: false,
-        fireExtinguisher: false
-      },
-      maintenanceSchedule: 'monthly',
-      status: 'active',
-      depot: '',
-      insuranceProvider: '',
-      lastServiceDate: '',
-      nextServiceDate: ''
-    });
-  };
-
+  // Handle back navigation
   const handleBack = () => {
     navigate('/dashboard/registration');
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-foreground transition-colors duration-300 pt-20">
-      {/* Logout Confirmation Dialog */}
-      <LogoutConfirmationDialog
-        showDialog={showLogoutDialog}
-        onConfirm={handleLogoutConfirm}
-        onCancel={handleLogoutCancel}
-      />
-      
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Button
-            onClick={handleBack}
-            variant="outline"
-            className="flex items-center gap-2 text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-400"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Registration Portal
-          </Button>
-        </div>
+        <div className="max-w-4xl mx-auto">
+          {/* Back Button */}
+          <div className="mb-6">
+            <Button
+              onClick={handleBack}
+              variant="outline"
+              className="flex items-center gap-2 text-purple-600 hover:text-purple-700 border-purple-200 hover:border-purple-400 dark:text-purple-400 dark:border-purple-600 dark:hover:border-purple-500"
+              data-testid="back-button"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Registration Portal
+            </Button>
+          </div>
 
-        {/* Registration Form */}
-        <Card className="max-w-6xl mx-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-orange-200/70 dark:border-orange-700/70 shadow-2xl rounded-3xl">
-          <CardHeader className="text-center pb-8">
-            <div className="w-20 h-20 bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Bus className="w-10 h-10 text-white" />
-            </div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-orange-600 via-orange-700 to-orange-800 bg-clip-text text-transparent">
-              Bus Registration
-            </CardTitle>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
-              Add new buses to the fleet with complete specifications
+          {/* Toggle Button */}
+          <div className="flex items-center justify-end mb-8">
+            <Button
+              onClick={handleModeSwitch}
+              className="flex items-center bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+              data-testid="mode-toggle-button"
+            >
+              {isEditMode ? (
+                <>
+                  <UserPlus className="mr-2 h-5 w-5" />
+                  Switch to Register
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-5 w-5" />
+                  Switch to Update
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-purple-700 to-purple-800 bg-clip-text text-transparent mb-2 flex items-center justify-center">
+              <Bus className="w-10 h-10 mr-3 text-purple-600" />
+              {isEditMode ? 'Update Bus' : 'Bus Registration'}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {isEditMode ? 'Update existing bus details' : 'Register a new bus'}
             </p>
-          </CardHeader>
+          </div>
 
-          <CardContent className="px-8 pb-8">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Basic Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                  Basic Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Bus ID
-                    </label>
-                    <div className="relative">
-                      <Bus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="text"
-                        name="busId"
-                        value={formData.busId}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        placeholder="Enter bus ID"
-                        required
-                      />
-                    </div>
-                  </div>
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-500 mr-3" />
+              <span className="text-red-700 dark:text-red-300">{errorMessage}</span>
+            </div>
+          )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Registration Number
-                    </label>
+          {/* Main Form Container */}
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl p-8 border-2 border-purple-200/70 dark:border-purple-700/70 shadow-2xl">
+            
+            {/* Dropdown for Update Mode */}
+            {isEditMode && (
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Select Bus <span className="text-red-500">*</span>
+                </label>
+                <div className="relative" ref={dropdownRef}>
+                  <div className="relative">
                     <input
                       type="text"
-                      name="registrationNumber"
-                      value={formData.registrationNumber}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter registration number"
-                      required
+                      value={searchTerm}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      onFocus={() => setShowDropdown(true)}
+                      placeholder="Search bus by ID or number..."
+                      className="w-full bg-gray-50 dark:bg-gray-900/50 border border-gray-300 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200"
                     />
+                    <Search className="absolute right-3 top-3.5 h-5 w-5 text-gray-400" />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Manufacturer
-                    </label>
-                    <input
-                      type="text"
-                      name="manufacturer"
-                      value={formData.manufacturer}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter manufacturer"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Model
-                    </label>
-                    <input
-                      type="text"
-                      name="model"
-                      value={formData.model}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter model"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Year of Manufacture
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="number"
-                        name="yearOfManufacture"
-                        value={formData.yearOfManufacture}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        placeholder="Enter year"
-                        min="1990"
-                        max="2030"
-                        required
-                      />
+                  
+                  {showDropdown && (
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                      {filteredBuses.length > 0 ? (
+                        filteredBuses.map((bus) => (
+                          <div
+                            key={bus.stvBusId}
+                            onClick={() => handleBusSelect(bus)}
+                            className="px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                          >
+                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                              {bus.stvBusId}
+                            </div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                              {bus.busNumber} - {bus.busModel}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                          No buses found
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Capacity (Passengers)
-                    </label>
-                    <div className="relative">
-                      <Gauge className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="number"
-                        name="capacity"
-                        value={formData.capacity}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        placeholder="Enter capacity"
-                        min="1"
-                        required
-                      />
-                    </div>
-                  </div>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-4">
+                Bus {isEditMode ? "Update" : "Registration"}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Bus Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Bus Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="busNumber"
+                    value={formData.busNumber}
+                    onChange={handleChange}
+                    ref={formRefs.busNumber}
+                    disabled={isEditMode && !selectedBusId}
+                    className={`w-full bg-gray-50 dark:bg-gray-900/50 border ${
+                      errors.busNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                    } rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    placeholder="Enter bus number (e.g. MH12AB3456)"
+                    maxLength={20}
+                    required
+                  />
+                  {errors.busNumber && (
+                    <p className="mt-1 text-sm text-red-500">{errors.busNumber}</p>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Fuel Type
-                    </label>
-                    <div className="relative">
-                      <Fuel className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <select
-                        name="fuelType"
-                        value={formData.fuelType}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        required
-                      >
-                        <option value="">Select Fuel Type</option>
-                        <option value="diesel">Diesel</option>
-                        <option value="petrol">Petrol</option>
-                        <option value="cng">CNG</option>
-                        <option value="electric">Electric</option>
-                        <option value="hybrid">Hybrid</option>
-                      </select>
-                    </div>
-                  </div>
+                {/* Service Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Service Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="serviceNumber"
+                    value={formData.serviceNumber}
+                    onChange={handleChange}
+                    ref={formRefs.serviceNumber}
+                    disabled={isEditMode && !selectedBusId}
+                    className={`w-full bg-gray-50 dark:bg-gray-900/50 border ${
+                      errors.serviceNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                    } rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    placeholder="Enter service number (e.g. SVC456)"
+                    maxLength={20}
+                    required
+                  />
+                  {errors.serviceNumber && (
+                    <p className="mt-1 text-sm text-red-500">{errors.serviceNumber}</p>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Color
-                    </label>
-                    <input
-                      type="text"
-                      name="color"
-                      value={formData.color}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter color"
-                      required
-                    />
-                  </div>
+                {/* Bus Model */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Bus Model <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="busModel"
+                    value={formData.busModel}
+                    onChange={handleChange}
+                    ref={formRefs.busModel}
+                    disabled={isEditMode && !selectedBusId}
+                    className={`w-full bg-gray-50 dark:bg-gray-900/50 border ${
+                      errors.busModel ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                    } rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    placeholder="Enter bus model (e.g. Tata Starbus)"
+                    maxLength={50}
+                    required
+                  />
+                  {errors.busModel && (
+                    <p className="mt-1 text-sm text-red-500">{errors.busModel}</p>
+                  )}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Status
-                    </label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      required
-                    >
-                      <option value="active">Active</option>
-                      <option value="maintenance">Under Maintenance</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="retired">Retired</option>
-                    </select>
-                  </div>
+                {/* Bus Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Bus Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="busType"
+                    value={formData.busType}
+                    onChange={handleChange}
+                    ref={formRefs.busType}
+                    disabled={isEditMode && !selectedBusId}
+                    className={`w-full bg-gray-50 dark:bg-gray-900/50 border ${
+                      errors.busType ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                    } rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    required
+                  >
+                    <option value="">Select Bus Type</option>
+                    {availableBusTypes.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.busType && (
+                    <p className="mt-1 text-sm text-red-500">{errors.busType}</p>
+                  )}
+                </div>
+
+                {/* Bus Seating */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Bus Seating <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="busSeating"
+                    value={formData.busSeating}
+                    onChange={handleChange}
+                    ref={formRefs.busSeating}
+                    disabled={isEditMode && !selectedBusId}
+                    className={`w-full bg-gray-50 dark:bg-gray-900/50 border ${
+                      errors.busSeating ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                    } rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    placeholder="Enter seating capacity (numbers only)"
+                    required
+                  />
+                  {errors.busSeating && (
+                    <p className="mt-1 text-sm text-red-500">{errors.busSeating}</p>
+                  )}
                 </div>
               </div>
 
-              {/* Technical Details */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                  Technical Details
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Engine Number
-                    </label>
-                    <div className="relative">
-                      <Settings className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="text"
-                        name="engineNumber"
-                        value={formData.engineNumber}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        placeholder="Enter engine number"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Chassis Number
-                    </label>
-                    <input
-                      type="text"
-                      name="chassisNumber"
-                      value={formData.chassisNumber}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter chassis number"
-                      required
-                    />
-                  </div>
-                </div>
+              {/* Status */}
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="status"
+                  id="status"
+                  checked={formData.status}
+                  onChange={handleChange}
+                  disabled={isEditMode && !selectedBusId}
+                  className="h-5 w-5 text-purple-500 bg-gray-50 dark:bg-gray-900 border-gray-300 dark:border-gray-700 rounded focus:ring-purple-500/50 disabled:opacity-50"
+                />
+                <label htmlFor="status" className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Active Status
+                </label>
               </div>
 
-              {/* Legal Documents */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                  Legal Documents & Certificates
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Insurance Number
-                    </label>
-                    <input
-                      type="text"
-                      name="insuranceNumber"
-                      value={formData.insuranceNumber}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter insurance number"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Insurance Provider
-                    </label>
-                    <input
-                      type="text"
-                      name="insuranceProvider"
-                      value={formData.insuranceProvider}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter insurance provider"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Insurance Expiry Date
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="date"
-                        name="insuranceExpiryDate"
-                        value={formData.insuranceExpiryDate}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Fitness Certificate Expiry
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="date"
-                        name="fitnessExpiryDate"
-                        value={formData.fitnessExpiryDate}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Pollution Certificate Expiry
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="date"
-                        name="pollutionExpiryDate"
-                        value={formData.pollutionExpiryDate}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Road Tax Expiry Date
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="date"
-                        name="roadTaxExpiryDate"
-                        value={formData.roadTaxExpiryDate}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Financial Information */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                  Financial Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Purchase Date
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="date"
-                        name="purchaseDate"
-                        value={formData.purchaseDate}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Purchase Price (₹)
-                    </label>
-                    <input
-                      type="number"
-                      name="purchasePrice"
-                      value={formData.purchasePrice}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter purchase price"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Current Value (₹)
-                    </label>
-                    <input
-                      type="number"
-                      name="currentValue"
-                      value={formData.currentValue}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter current value"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Depot Location
-                    </label>
-                    <input
-                      type="text"
-                      name="depot"
-                      value={formData.depot}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      placeholder="Enter depot location"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Features */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                  Bus Features & Amenities
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries({
-                    airConditioning: 'Air Conditioning',
-                    wifi: 'Wi-Fi',
-                    gps: 'GPS Tracking',
-                    cctv: 'CCTV Camera',
-                    musicSystem: 'Music System',
-                    chargingPorts: 'Charging Ports',
-                    emergencyExit: 'Emergency Exit',
-                    fireExtinguisher: 'Fire Extinguisher'
-                  }).map(([key, label]) => (
-                    <div key={key} className="flex items-center space-x-3">
-                      <input
-                        type="checkbox"
-                        name={`features.${key}`}
-                        checked={formData.features[key]}
-                        onChange={handleInputChange}
-                        className="w-4 h-4 text-orange-600 border-orange-300 rounded focus:ring-orange-500"
-                      />
-                      <label className="text-sm text-gray-700 dark:text-gray-300">
-                        {label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Maintenance Schedule */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
-                  Maintenance Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Maintenance Schedule
-                    </label>
-                    <select
-                      name="maintenanceSchedule"
-                      value={formData.maintenanceSchedule}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      required
-                    >
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="quarterly">Quarterly</option>
-                      <option value="bi-annual">Bi-Annual</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Last Service Date
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="date"
-                        name="lastServiceDate"
-                        value={formData.lastServiceDate}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Next Service Date
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-orange-500 w-5 h-5" />
-                      <input
-                        type="date"
-                        name="nextServiceDate"
-                        value={formData.nextServiceDate}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-orange-200 dark:border-orange-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/20 transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end space-x-4 pt-6">
-                <Button
-                  type="button"
-                  onClick={handleBack}
-                  variant="outline"
-                  className="px-8 py-3 border-orange-200 text-orange-600 hover:bg-orange-50"
-                >
-                  Cancel
-                </Button>
+              {/* Buttons */}
+              <div className="space-y-4">
+                {/* Form Submit Button */}
                 <Button
                   type="submit"
-                  className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  disabled={isLoading || (isEditMode && !selectedBusId)}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl px-6 py-4 font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  data-testid="submit-button"
                 >
-                  Register Bus
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      {isEditMode ? 'Updating...' : 'Registering...'}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center">
+                      {isEditMode ? (
+                        <>
+                          <Save className="mr-2 h-5 w-5" />
+                          Update Bus
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="mr-2 h-5 w-5" />
+                          Register Bus
+                        </>
+                      )}
+                    </div>
+                  )}
                 </Button>
+
+                {/* Excel Buttons - Only in Registration Mode */}
+                {!isEditMode && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Download Template */}
+                    <Button
+                      type="button"
+                      onClick={downloadTemplate}
+                      className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl px-6 py-4 font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-green-500/30"
+                      data-testid="download-template-button"
+                    >
+                      <Download className="mr-2 h-5 w-5" />
+                      Download Excel Template
+                    </Button>
+
+                    {/* Upload Excel */}
+                    <div className="relative">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleExcelUpload}
+                        accept=".xlsx,.xls"
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl px-6 py-4 font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                        data-testid="upload-excel-button"
+                      >
+                        {isUploading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                            Uploading...
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="mr-2 h-5 w-5" />
+                            Upload Excel File
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Excel Error Display */}
+              {excelError && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800 rounded-xl whitespace-pre-wrap">
+                  <p className="font-bold text-red-700 dark:text-red-300">Excel Processing Error:</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">{excelError}</p>
+                  <button
+                    onClick={() => setExcelError(null)}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 underline"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
             </form>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
+
+      {/* Success Modal */}
+      {isSuccess && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border-2 border-green-200 dark:border-green-800 shadow-2xl transform transition-all duration-300 animate-in fade-in-0 zoom-in-95 max-w-md mx-4">
+            <div className="text-center">
+              <CheckCircle className="mx-auto text-green-500 w-16 h-16 mb-4 animate-pulse" />
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-green-700 bg-clip-text text-transparent mb-4">
+                Success!
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                {successMessage}
+              </p>
+              <Button
+                onClick={() => setIsSuccess(false)}
+                className="mt-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl px-6 py-2 font-semibold transition-all duration-300"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
