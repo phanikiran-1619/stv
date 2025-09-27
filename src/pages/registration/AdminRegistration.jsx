@@ -14,6 +14,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { Button } from '../../components/ui/button.jsx';
+import * as XLSX from "xlsx";
 
 const AdminRegistration = () => {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ const AdminRegistration = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [excelError, setExcelError] = useState(null);
 
   const formRefs = {
     firstName: useRef(null),
@@ -93,6 +95,7 @@ const AdminRegistration = () => {
     setSuccessMessage('');
     setSelectedAdminId('');
     setSearchTerm('');
+    setExcelError(null);
   }, []);
 
   // Handle mode switch
@@ -344,26 +347,95 @@ const AdminRegistration = () => {
   }, [formData, validateForm, errors, formRefs, isEditMode, selectedAdminId, resetForm]);
 
   // Download Excel template
-  const downloadTemplate = () => {
-    const headers = ['firstName', 'lastName', 'username', 'password', 'contactNum', 'mailId', 'status'];
-    const sampleData = [
-      'John', 'Doe', 'johndoe', 'Pass123456', '9876543210', 'john@example.com', 'true'
-    ];
-    
-    const csvContent = [
-      headers.join(','),
-      sampleData.join(',')
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'admin_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+  const downloadTemplate = async () => {
+    try {
+      const templateData = [
+        {
+          'First Name': 'John',
+          'Last Name': 'Doe',
+          'Username': 'johndoe',
+          'Password': 'Pass123456',
+          'Contact Number': '9876543210',
+          'Email': 'john@example.com',
+          'Status': 'true'
+        }
+      ];
+      
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Admin Template");
+      XLSX.writeFile(workbook, `admin_registration_template.xlsx`);
+      
+      setSuccessMessage("Excel template downloaded successfully!");
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Download failed:', error);
+      setErrorMessage("Failed to download template");
+    }
+  };
+
+  // Validation functions for Excel data
+  const validateExcelField = (name, value) => {
+    switch (name) {
+      case 'firstName':
+      case 'lastName':
+        if (!value) return `${name === 'firstName' ? 'First' : 'Last'} name is required`;
+        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Only alphabets are allowed';
+        if (value.length > 20) return 'Must be 20 characters or less';
+        return '';
+      case 'username':
+        if (!value) return 'Username is required';
+        if (value.length > 30) return 'Must be 30 characters or less';
+        return '';
+      case 'password':
+        if (!value) return 'Password is required';
+        if (value.length !== 10) return 'Must be exactly 10 characters';
+        if (!/[A-Z]/.test(value)) return 'Must contain at least one uppercase letter';
+        return '';
+      case 'contactNum':
+        if (!value) return 'Contact number is required';
+        if (!/^\d{10}$/.test(value)) return 'Must be exactly 10 digits';
+        return '';
+      case 'mailId':
+        if (!value) return 'Email is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Valid email is required';
+        return '';
+      case 'status':
+        if (value !== 'true' && value !== 'false') return 'Status must be true or false';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  // Check for duplicates within Excel data
+  const checkExcelDuplicates = (adminDataArray) => {
+    const seenUsernames = new Set();
+    const seenEmails = new Set();
+    const seenContactNums = new Set();
+
+    for (let i = 0; i < adminDataArray.length; i++) {
+      const admin = adminDataArray[i];
+      if (seenUsernames.has(admin.username)) {
+        setExcelError(`Row ${i + 2}: Duplicate username: ${admin.username}`);
+        return false;
+      }
+      if (seenEmails.has(admin.mailId)) {
+        setExcelError(`Row ${i + 2}: Duplicate email: ${admin.mailId}`);
+        return false;
+      }
+      if (seenContactNums.has(admin.contactNum)) {
+        setExcelError(`Row ${i + 2}: Duplicate contact number: ${admin.contactNum}`);
+        return false;
+      }
+      seenUsernames.add(admin.username);
+      seenEmails.add(admin.mailId);
+      seenContactNums.add(admin.contactNum);
+    }
+    return true;
   };
 
   // Handle Excel upload
@@ -371,44 +443,179 @@ const AdminRegistration = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const token = getToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/v1/admins/bulk-upload`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to upload file');
-      }
-
-      setIsSuccess(true);
-      setSuccessMessage(`Excel upload successful! ${result.count || 0} admins added.`);
-      
-      setTimeout(() => {
-        setIsSuccess(false);
-      }, 3000);
-
-    } catch (error) {
-      console.error('Upload error:', error);
-      setErrorMessage(error.message || 'Failed to upload Excel file');
-    } finally {
-      setIsUploading(false);
-      e.target.value = '';
+    const token = getToken();
+    if (!token) {
+      setErrorMessage("Please log in again.");
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const headers = jsonData[0];
+        
+        const requiredHeaders = [
+          "First Name",
+          "Last Name", 
+          "Username",
+          "Password",
+          "Contact Number",
+          "Email",
+          "Status"
+        ];
+        
+        const missingRequiredHeaders = requiredHeaders.filter(
+          (header) => !headers.includes(header)
+        );
+        
+        if (missingRequiredHeaders.length > 0) {
+          setExcelError(`Missing required headers: ${missingRequiredHeaders.join(", ")}`);
+          return;
+        }
+
+        const adminDataArray = [];
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row || row.length === 0) continue;
+
+          const rowObject = headers.reduce((obj, header, index) => {
+            obj[header] = String(row[index] ?? "").trim();
+            return obj;
+          }, {});
+
+          // Check if all required fields are present
+          if (
+            !rowObject["First Name"] ||
+            !rowObject["Last Name"] ||
+            !rowObject["Username"] ||
+            !rowObject["Password"] ||
+            !rowObject["Contact Number"] ||
+            !rowObject["Email"] ||
+            !rowObject["Status"]
+          ) {
+            setExcelError(
+              `Row ${i + 1}: Missing required fields (First Name, Last Name, Username, Password, Contact Number, Email, Status)`
+            );
+            return;
+          }
+
+          // Validate each field
+          const validationErrors = [];
+          const firstName = validateExcelField('firstName', rowObject["First Name"]);
+          if (firstName) validationErrors.push(`First Name: ${firstName}`);
+          
+          const lastName = validateExcelField('lastName', rowObject["Last Name"]);
+          if (lastName) validationErrors.push(`Last Name: ${lastName}`);
+          
+          const username = validateExcelField('username', rowObject["Username"]);
+          if (username) validationErrors.push(`Username: ${username}`);
+          
+          const password = validateExcelField('password', rowObject["Password"]);
+          if (password) validationErrors.push(`Password: ${password}`);
+          
+          const contactNum = validateExcelField('contactNum', rowObject["Contact Number"]);
+          if (contactNum) validationErrors.push(`Contact Number: ${contactNum}`);
+          
+          const mailId = validateExcelField('mailId', rowObject["Email"]);
+          if (mailId) validationErrors.push(`Email: ${mailId}`);
+          
+          const status = validateExcelField('status', rowObject["Status"]);
+          if (status) validationErrors.push(`Status: ${status}`);
+
+          if (validationErrors.length > 0) {
+            setExcelError(`Row ${i + 1} validation errors: ${validationErrors.join('; ')}`);
+            return;
+          }
+
+          adminDataArray.push({
+            firstName: rowObject["First Name"],
+            lastName: rowObject["Last Name"],
+            username: rowObject["Username"],
+            password: rowObject["Password"],
+            contactNum: rowObject["Contact Number"],
+            mailId: rowObject["Email"].toLowerCase(),
+            status: rowObject["Status"].toLowerCase() === 'true',
+          });
+        }
+
+        if (adminDataArray.length === 0) {
+          setExcelError("Excel file contains no valid data rows.");
+          return;
+        }
+
+        if (!checkExcelDuplicates(adminDataArray)) {
+          return;
+        }
+
+        setIsUploading(true);
+        const failedRegistrations = [];
+        let successCount = 0;
+
+        for (const adminData of adminDataArray) {
+          try {
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/v1/admins`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+              },
+              body: JSON.stringify(adminData),
+            });
+
+            let responseData = {};
+            try {
+              responseData = await response.json();
+            } catch (parseError) {
+              // If response is not JSON, use response text
+              const responseText = await response.text();
+              responseData = { error: responseText || "Invalid response format" };
+            }
+            
+            if (!response.ok) {
+              // Check for both 'error' and 'message' fields in API response
+              const errorMessage = responseData.error || responseData.message || `HTTP ${response.status}: Registration failed`;
+              failedRegistrations.push(`${adminData.username}: ${errorMessage}`);
+            } else {
+              successCount++;
+            }
+          } catch (error) {
+            failedRegistrations.push(`${adminData.username}: Network or unexpected error - ${error.message}`);
+          }
+        }
+
+        setIsUploading(false);
+
+        if (failedRegistrations.length === 0) {
+          setSuccessMessage(`${successCount} admins registered successfully`);
+          setIsSuccess(true);
+          setExcelError(null);
+          setTimeout(() => {
+            setIsSuccess(false);
+          }, 3000);
+        } else {
+          let message = "";
+          if (successCount > 0) {
+            message += `✅ ${successCount} admins registered successfully\n\n`;
+          }
+          message += `❌ Failed to register ${failedRegistrations.length} admins:\n\n`;
+          message += failedRegistrations.map((error, index) => `${index + 1}. ${error}`).join("\n");
+          setExcelError(message);
+        }
+      } catch (error) {
+        console.error("Error parsing Excel file:", error);
+        setExcelError("Failed to parse Excel file. Ensure it is a valid Excel file.");
+        setIsUploading(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    
+    // Clear the file input
+    e.target.value = '';
   };
 
   // Click outside dropdown handler
@@ -777,8 +984,9 @@ const AdminRegistration = () => {
                         type="file"
                         ref={fileInputRef}
                         onChange={handleExcelUpload}
-                        accept=".xlsx,.xls,.csv"
+                        accept=".xlsx,.xls"
                         className="hidden"
+                        disabled={isUploading}
                       />
                       <Button
                         type="button"
@@ -803,6 +1011,20 @@ const AdminRegistration = () => {
                   </div>
                 )}
               </div>
+
+              {/* Excel Error Display */}
+              {excelError && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800 rounded-xl whitespace-pre-wrap">
+                  <p className="font-bold text-red-700 dark:text-red-300">Excel Processing Error:</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">{excelError}</p>
+                  <button
+                    onClick={() => setExcelError(null)}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 underline"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
