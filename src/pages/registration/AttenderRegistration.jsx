@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
+  ArrowLeft,
   UserPlus, 
   CheckCircle, 
   AlertCircle, 
@@ -8,12 +9,16 @@ import {
   Upload, 
   Download,
   Search,
-  X
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Button } from '../../components/ui/button.jsx';
+import * as XLSX from "xlsx";
 
 const AttenderRegistration = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [attenders, setAttenders] = useState([]);
@@ -35,6 +40,7 @@ const AttenderRegistration = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [excelError, setExcelError] = useState(null);
 
   const formRefs = {
     firstName: useRef(null),
@@ -50,6 +56,26 @@ const AttenderRegistration = () => {
 
   // Get token from localStorage
   const getToken = () => localStorage.getItem('operatortoken');
+
+  // Browser back button detection
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // Prevent default browser back behavior
+      event.preventDefault();
+      // Navigate to registration portal
+      navigate('/dashboard/registration');
+    };
+    
+    // Add event listener for browser back button
+    window.addEventListener('popstate', handlePopState);
+    
+    // Push current state to prevent immediate back navigation
+    window.history.pushState(null, "", window.location.href);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [navigate]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -68,6 +94,7 @@ const AttenderRegistration = () => {
     setSuccessMessage('');
     setSelectedAttenderId('');
     setSearchTerm('');
+    setExcelError(null);
   }, []);
 
   // Handle mode switch
@@ -148,7 +175,7 @@ const AttenderRegistration = () => {
   const handleSearch = (value) => {
     setSearchTerm(value);
     const filtered = attenders.filter(attender =>
-      attender.stvAttenderId.toLowerCase().includes(value.toLowerCase()) ||
+      attender.stvAttenderId?.toLowerCase().includes(value.toLowerCase()) ||
       `${attender.firstName} ${attender.lastName}`.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredAttenders(filtered);
@@ -191,6 +218,66 @@ const AttenderRegistration = () => {
         return '';
     }
   }, [isEditMode]);
+
+  // Validation functions for Excel data
+  const validateExcelField = (name, value) => {
+    switch (name) {
+      case 'firstName':
+      case 'lastName':
+        if (!value) return `${name === 'firstName' ? 'First' : 'Last'} name is required`;
+        if (!/^[a-zA-Z\s]+$/.test(value)) return 'Only alphabets are allowed';
+        if (value.length > 20) return 'Must be 20 characters or less';
+        return '';
+      case 'username':
+        if (!value) return 'Username is required';
+        if (value.length > 10) return 'Must be 10 characters or less';
+        return '';
+      case 'password':
+        if (!value) return 'Password is required';
+        if (value.length > 10) return 'Must be 10 characters or less';
+        return '';
+      case 'contactNum':
+        if (!value) return 'Contact number is required';
+        if (!/^\d{10}$/.test(value)) return 'Must be exactly 10 digits';
+        return '';
+      case 'mailId':
+        if (!value) return 'Email is required';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Valid email is required';
+        return '';
+      case 'status':
+        if (value !== 'true' && value !== 'false') return 'Status must be true or false';
+        return '';
+      default:
+        return '';
+    }
+  };
+
+  // Check for duplicates within Excel data
+  const checkExcelDuplicates = (attenderDataArray) => {
+    const seenUsernames = new Set();
+    const seenEmails = new Set();
+    const seenContactNums = new Set();
+
+    for (let i = 0; i < attenderDataArray.length; i++) {
+      const attender = attenderDataArray[i];
+      if (seenUsernames.has(attender.username)) {
+        setExcelError(`Row ${i + 2}: Duplicate username: ${attender.username}`);
+        return false;
+      }
+      if (seenEmails.has(attender.mailId)) {
+        setExcelError(`Row ${i + 2}: Duplicate email: ${attender.mailId}`);
+        return false;
+      }
+      if (seenContactNums.has(attender.contactNum)) {
+        setExcelError(`Row ${i + 2}: Duplicate contact number: ${attender.contactNum}`);
+        return false;
+      }
+      seenUsernames.add(attender.username);
+      seenEmails.add(attender.mailId);
+      seenContactNums.add(attender.contactNum);
+    }
+    return true;
+  };
 
   // Validate entire form
   const validateForm = useCallback(() => {
@@ -313,26 +400,34 @@ const AttenderRegistration = () => {
   }, [formData, validateForm, errors, formRefs, isEditMode, selectedAttenderId, resetForm]);
 
   // Download Excel template
-  const downloadTemplate = () => {
-    const headers = ['firstName', 'lastName', 'username', 'password', 'contactNum', 'mailId', 'status'];
-    const sampleData = [
-      'John', 'Doe', 'johndoe', 'pass123', '9876543210', 'john@example.com', 'true'
-    ];
-    
-    const csvContent = [
-      headers.join(','),
-      sampleData.join(',')
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'attender_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+  const downloadTemplate = async () => {
+    try {
+      const templateData = [
+        {
+          'First Name': 'John',
+          'Last Name': 'Doe',
+          'Username': 'johndoe',
+          'Password': 'pass123',
+          'Contact Number': '9876543210',
+          'Email': 'john@example.com',
+          'Status': 'true'
+        }
+      ];
+      
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Attender Template");
+      XLSX.writeFile(workbook, `attender_registration_template.xlsx`);
+      
+      setSuccessMessage("Excel template downloaded successfully!");
+      setIsSuccess(true);
+      setTimeout(() => {
+        setIsSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Download failed:', error);
+      setErrorMessage("Failed to download template");
+    }
   };
 
   // Handle Excel upload
@@ -340,44 +435,179 @@ const AttenderRegistration = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const token = getToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/attenders/bulk-upload`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to upload file');
-      }
-
-      setIsSuccess(true);
-      setSuccessMessage(`Excel upload successful! ${result.count || 0} attenders added.`);
-      
-      setTimeout(() => {
-        setIsSuccess(false);
-      }, 3000);
-
-    } catch (error) {
-      console.error('Upload error:', error);
-      setErrorMessage(error.message || 'Failed to upload Excel file');
-    } finally {
-      setIsUploading(false);
-      e.target.value = '';
+    const token = getToken();
+    if (!token) {
+      setErrorMessage("Please log in again.");
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const headers = jsonData[0];
+        
+        const requiredHeaders = [
+          "First Name",
+          "Last Name", 
+          "Username",
+          "Password",
+          "Contact Number",
+          "Email",
+          "Status"
+        ];
+        
+        const missingRequiredHeaders = requiredHeaders.filter(
+          (header) => !headers.includes(header)
+        );
+        
+        if (missingRequiredHeaders.length > 0) {
+          setExcelError(`Missing required headers: ${missingRequiredHeaders.join(", ")}`);
+          return;
+        }
+
+        const attenderDataArray = [];
+        for (let i = 1; i < jsonData.length; i++) {
+          const row = jsonData[i];
+          if (!row || row.length === 0) continue;
+
+          const rowObject = headers.reduce((obj, header, index) => {
+            obj[header] = String(row[index] ?? "").trim();
+            return obj;
+          }, {});
+
+          // Check if all required fields are present
+          if (
+            !rowObject["First Name"] ||
+            !rowObject["Last Name"] ||
+            !rowObject["Username"] ||
+            !rowObject["Password"] ||
+            !rowObject["Contact Number"] ||
+            !rowObject["Email"] ||
+            !rowObject["Status"]
+          ) {
+            setExcelError(
+              `Row ${i + 1}: Missing required fields (First Name, Last Name, Username, Password, Contact Number, Email, Status)`
+            );
+            return;
+          }
+
+          // Validate each field
+          const validationErrors = [];
+          const firstName = validateExcelField('firstName', rowObject["First Name"]);
+          if (firstName) validationErrors.push(`First Name: ${firstName}`);
+          
+          const lastName = validateExcelField('lastName', rowObject["Last Name"]);
+          if (lastName) validationErrors.push(`Last Name: ${lastName}`);
+          
+          const username = validateExcelField('username', rowObject["Username"]);
+          if (username) validationErrors.push(`Username: ${username}`);
+          
+          const password = validateExcelField('password', rowObject["Password"]);
+          if (password) validationErrors.push(`Password: ${password}`);
+          
+          const contactNum = validateExcelField('contactNum', rowObject["Contact Number"]);
+          if (contactNum) validationErrors.push(`Contact Number: ${contactNum}`);
+          
+          const mailId = validateExcelField('mailId', rowObject["Email"]);
+          if (mailId) validationErrors.push(`Email: ${mailId}`);
+          
+          const status = validateExcelField('status', rowObject["Status"]);
+          if (status) validationErrors.push(`Status: ${status}`);
+
+          if (validationErrors.length > 0) {
+            setExcelError(`Row ${i + 1} validation errors: ${validationErrors.join('; ')}`);
+            return;
+          }
+
+          attenderDataArray.push({
+            firstName: rowObject["First Name"],
+            lastName: rowObject["Last Name"],
+            username: rowObject["Username"],
+            password: rowObject["Password"],
+            contactNum: rowObject["Contact Number"],
+            mailId: rowObject["Email"].toLowerCase(),
+            status: rowObject["Status"].toLowerCase() === 'true',
+          });
+        }
+
+        if (attenderDataArray.length === 0) {
+          setExcelError("Excel file contains no valid data rows.");
+          return;
+        }
+
+        if (!checkExcelDuplicates(attenderDataArray)) {
+          return;
+        }
+
+        setIsUploading(true);
+        const failedRegistrations = [];
+        let successCount = 0;
+
+        for (const attenderData of attenderDataArray) {
+          try {
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL1}/api/attenders`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+              },
+              body: JSON.stringify(attenderData),
+            });
+
+            let responseData = {};
+            try {
+              responseData = await response.json();
+            } catch (parseError) {
+              // If response is not JSON, use response text
+              const responseText = await response.text();
+              responseData = { error: responseText || "Invalid response format" };
+            }
+            
+            if (!response.ok) {
+              // Check for both 'error' and 'message' fields in API response
+              const errorMessage = responseData.error || responseData.message || `HTTP ${response.status}: Registration failed`;
+              failedRegistrations.push(`${attenderData.username}: ${errorMessage}`);
+            } else {
+              successCount++;
+            }
+          } catch (error) {
+            failedRegistrations.push(`${attenderData.username}: Network or unexpected error - ${error.message}`);
+          }
+        }
+
+        setIsUploading(false);
+
+        if (failedRegistrations.length === 0) {
+          setSuccessMessage(`${successCount} attenders registered successfully`);
+          setIsSuccess(true);
+          setExcelError(null);
+          setTimeout(() => {
+            setIsSuccess(false);
+          }, 3000);
+        } else {
+          let message = "";
+          if (successCount > 0) {
+            message += `✅ ${successCount} attenders registered successfully\n\n`;
+          }
+          message += `❌ Failed to register ${failedRegistrations.length} attenders:\n\n`;
+          message += failedRegistrations.map((error, index) => `${index + 1}. ${error}`).join("\n");
+          setExcelError(message);
+        }
+      } catch (error) {
+        console.error("Error parsing Excel file:", error);
+        setExcelError("Failed to parse Excel file. Ensure it is a valid Excel file.");
+        setIsUploading(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    
+    // Clear the file input
+    e.target.value = '';
   };
 
   // Click outside dropdown handler
@@ -408,10 +638,28 @@ const AttenderRegistration = () => {
     }
   }, [navigate]);
 
+  // Handle back navigation
+  const handleBack = () => {
+    navigate('/dashboard/registration');
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          {/* Back Button */}
+          <div className="mb-6">
+            <Button
+              onClick={handleBack}
+              variant="outline"
+              className="flex items-center gap-2 text-purple-600 hover:text-purple-700 border-purple-200 hover:border-purple-400 dark:text-purple-400 dark:border-purple-600 dark:hover:border-purple-500"
+              data-testid="back-button"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Registration Portal
+            </Button>
+          </div>
+
           {/* Toggle Button */}
           <div className="flex items-center justify-end mb-8">
             <Button
@@ -503,6 +751,10 @@ const AttenderRegistration = () => {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-4">
+                Attender {isEditMode ? "Update" : "Registration"}
+              </div>
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* First Name */}
                 <div>
@@ -574,6 +826,9 @@ const AttenderRegistration = () => {
                   {errors.username && (
                     <p className="mt-1 text-sm text-red-500">{errors.username}</p>
                   )}
+                  {isEditMode && (
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Username cannot be edited</p>
+                  )}
                 </div>
 
                 {/* Password - Hidden in update mode */}
@@ -582,19 +837,28 @@ const AttenderRegistration = () => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Password <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      ref={formRefs.password}
-                      className={`w-full bg-gray-50 dark:bg-gray-900/50 border ${
-                        errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
-                      } rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200`}
-                      placeholder="Enter password"
-                      maxLength={10}
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        ref={formRefs.password}
+                        className={`w-full bg-gray-50 dark:bg-gray-900/50 border ${
+                          errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-700'
+                        } rounded-xl px-4 py-3 pr-10 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all duration-200`}
+                        placeholder="Enter password (max 10 chars)"
+                        maxLength={10}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                     {errors.password && (
                       <p className="mt-1 text-sm text-red-500">{errors.password}</p>
                     )}
@@ -716,8 +980,9 @@ const AttenderRegistration = () => {
                         type="file"
                         ref={fileInputRef}
                         onChange={handleExcelUpload}
-                        accept=".xlsx,.xls,.csv"
+                        accept=".xlsx,.xls"
                         className="hidden"
+                        disabled={isUploading}
                       />
                       <Button
                         type="button"
@@ -742,6 +1007,20 @@ const AttenderRegistration = () => {
                   </div>
                 )}
               </div>
+
+              {/* Excel Error Display */}
+              {excelError && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/30 border border-red-300 dark:border-red-800 rounded-xl whitespace-pre-wrap">
+                  <p className="font-bold text-red-700 dark:text-red-300">Excel Processing Error:</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">{excelError}</p>
+                  <button
+                    onClick={() => setExcelError(null)}
+                    className="mt-2 text-sm text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 underline"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>
